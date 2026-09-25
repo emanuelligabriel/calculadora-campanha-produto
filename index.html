@@ -196,9 +196,6 @@ body.hist .grid{grid-template-columns:minmax(0,1fr)}
 }
 @media (prefers-reduced-motion:no-preference){ .btn,.modes button,.step button{transition:background .15s} }
 </style>
-</head>
-<body>
-
 
 <div class="wrap">
   <header class="top">
@@ -285,6 +282,18 @@ body.hist .grid{grid-template-columns:minmax(0,1fr)}
           <div class="blk-h"><h2>1. Canais</h2><span class="tag" id="t-canais">Nota 1</span></div>
           <p class="hint">Cada envio ou entrega vale 1 ponto. Três e-mails valem 3 pontos. Criativos, playbook, vídeos e redes sociais também contam.</p>
           <div id="canais"></div>
+          <div class="sub-opt" id="pb-w" hidden>
+            <div class="field"><span>Complexidade do playbook</span>
+              <select id="c-pbnivel"><option value="simples">Simples (1 a 2 dias)</option><option value="passo">Com passo a passo (2 a 3 dias)</option><option value="cx">Com validação do CX (3 a 4 dias)</option></select></div>
+          </div>
+          <div class="sub-opt" id="sc-w" hidden>
+            <div class="field"><span>Tamanho da entrega em redes sociais</span>
+              <select id="c-socnivel"><option value="n1">Simples: 1 post estático, sem envolver produto (2 a 4 dias)</option><option value="n2">Médio: 2 a 3 posts ou carrossel, ou envolve produto (4 a 6 dias)</option><option value="n3">Complexo: 4 ou mais posts, vídeo (IA ou edição) ou material complexo (6 a 8 dias)</option></select></div>
+          </div>
+          <div class="sub-opt" id="np-w" hidden>
+            <div class="field"><span>Lista do e-mail de NPS</span>
+              <select id="c-npslista"><option value="pronta">Lista de NPS já pronta (1 a 2 dias)</option><option value="seg">Segmentada por outro time (2 dias + 1 dia de espera)</option></select></div>
+          </div>
         </div>
 
         <div class="card">
@@ -508,13 +517,13 @@ var CFG={
     {id:'emailNps',nome:'E-mail para NPS',tipo:'count',max:3,dica:'Combine com o calendário de NPS'},
     {id:'whats',nome:'Comunidade Obra Prima',tipo:'count',max:8,dica:'Post único vale 1. Sequência vale 1 por post.'},
     {id:'beamer',nome:'Beamer',tipo:'toggle'},
-    {id:'zap',nome:'Disparo para WhatsApp',tipo:'count',max:5},
+    {id:'zap',nome:'Disparo para WhatsApp',tipo:'count',max:5,dica:'Sai em paralelo às outras entregas (1 dia), não soma no prazo'},
     {id:'crComercial',nome:'Criativo para comercial',tipo:'toggle'},
     {id:'crCS',nome:'Criativo para CS',tipo:'toggle'},
     {id:'playbook',nome:'Playbook de utilização (CS)',tipo:'toggle'},
     {id:'youtube',nome:'Vídeo no YouTube',tipo:'toggle'},
     {id:'miniVideos',nome:'Mini-vídeos para comercial',tipo:'count',max:5},
-    {id:'social',nome:'Redes sociais',tipo:'toggle',dica:'Aciona a designer de redes sociais'}
+    {id:'social',nome:'Redes sociais',tipo:'toggle',dica:'Aciona a designer de redes sociais; o prazo depende do tamanho da entrega'}
   ],
   faixasCanais:[{min:1,max:2,nota:1},{min:3,max:5,nota:2},{min:6,max:99,nota:3}],
   faixasPorte:[{min:4,max:6,nome:'Pequena'},{min:7,max:9,nome:'Média'},{min:10,max:12,nome:'Grande'}],
@@ -536,6 +545,9 @@ var CFG={
     revisao:{'Pequena':[0,0],'Média':[1,1],'Grande':[1,1]},
     folga:{'Pequena':[1,1],'Média':[2,3],'Grande':[2,3]},
     referencia:{'Pequena':[2,3],'Média':[6,8],'Grande':[9,11]},
+    playbook:{simples:[1,2],passo:[2,3],cx:[3,4]},
+    social:{n1:[2,4],n2:[4,6],n3:[6,8]},
+    nps:{pronta:[1,2],seg:[3,3]},zap:[1,1],
     sprint:5,docMax:2
   }
 };
@@ -664,10 +676,14 @@ function buildRules(){
     +'<tr><td>Mini-vídeo (cada vídeo além do primeiro)</td><td class="m">+'+rng(P.videoExtra)+'</td></tr>'
     +'<tr><td>Criativo</td><td class="m">'+rng(P.criativo)+'</td></tr>'
     +'<tr><td>Criativo para comercial e para CS juntos</td><td class="m">+'+rng(P.criativoExtra)+'</td></tr>'
+    +'<tr><td>Playbook (CS): simples / com passo a passo / com validação do CX</td><td class="m">'+rng(P.playbook.simples)+' / '+rng(P.playbook.passo)+' / '+rng(P.playbook.cx)+'</td></tr>'
+    +'<tr><td>Redes sociais: simples / médio / complexo</td><td class="m">'+rng(P.social.n1)+' / '+rng(P.social.n2)+' / '+rng(P.social.n3)+'</td></tr>'
+    +'<tr><td>E-mail para NPS: lista pronta / segmentada por outro time</td><td class="m">'+rng(P.nps.pronta)+' / 2 + 1 de espera</td></tr>'
+    +'<tr><td>Disparo para WhatsApp</td><td class="m">1, em paralelo</td></tr>'
     +'<tr><td>Revisão: pequena / média / grande</td><td class="m">0 / 1 / 1</td></tr>'
     +'<tr><td>Folga: pequena / média / grande</td><td class="m">1 / 2 a 3 / 2 a 3</td></tr>'
     +'<tr><td>Aviso no Beamer pedido pelo Suporte</td><td class="m">5 dias de antecedência</td></tr>');
-  h+='<p class="hint" style="margin-top:12px">O prazo é o caminho crítico: Marketing de Produto (gravação, copy e artigos), vídeo com o designer e criativo andam em paralelo. Feriados não entram na conta de datas. Urgências imprevistas ficam fora da calculadora: avise na hora pelo WhatsApp, anúncio no sistema ou e-mail de urgência levam de 15 a 30 minutos, e e-mail para a base leva no mínimo 1 dia útil. Cada mini-vídeo além do primeiro vídeo soma 1 dia, e ter criativo para comercial e para CS soma 1 dia: são estimativas a confirmar. Playbook, redes sociais, disparo de WhatsApp e e-mail de NPS ainda não têm prazo próprio.</p>';
+  h+='<p class="hint" style="margin-top:12px">O prazo é o caminho crítico: Marketing de Produto (gravação, copy e artigos), vídeo com o designer e criativo andam em paralelo. Feriados não entram na conta de datas. Urgências imprevistas ficam fora da calculadora: avise na hora pelo WhatsApp, anúncio no sistema ou e-mail de urgência levam de 15 a 30 minutos, e e-mail para a base leva no mínimo 1 dia útil. Cada mini-vídeo além do primeiro vídeo soma 1 dia, e ter criativo para comercial e para CS soma 1 dia: são estimativas a confirmar. Redes sociais, playbook e e-mail de NPS andam em trilhas paralelas, e o disparo para WhatsApp sai junto das outras entregas.</p>';
   $('rules').innerHTML=h;
 }
 
@@ -691,7 +707,8 @@ function readCamp(){
   var soma=nCanais+nEsf+abr+nDeps;
   var porte=CFG.faixasPorte.filter(function(f){return soma>=f.min&&soma<=f.max;})[0].nome;
   return {q:q,pts:pts,nCanais:nCanais,temVideo:temVideo,criativo:criativo,dif:dif,nEsf:nEsf,abr:abr,deps:deps,nDeps:nDeps,soma:soma,porte:porte,
-    artigos:n('c-artigos'),estudo:c('c-estudo'),nome:$('c-nome').value.trim()};
+    artigos:n('c-artigos'),estudo:c('c-estudo'),nome:$('c-nome').value.trim(),
+    pbn:$('c-pbnivel').value,socn:$('c-socnivel').value,npsn:$('c-npslista').value};
 }
 
 /* ---------- campanha ---------- */
@@ -700,10 +717,15 @@ function calcPrazo(s){
   var estudo=s.estudo?P.estudo:[0,0];
   var nVid=(s.q.youtube>0?1:0)+s.q.miniVideos;
   var A=add(add(s.temVideo?P.gravacao:[0,0],P.copy),P.artigo[s.artigos]);
+  if(s.q.playbook>0)A=add(A,P.playbook[s.pbn]);
   var B=s.temVideo?add(add(P.gravacao,P.edicao),mul(P.videoExtra,Math.max(0,nVid-1))):[0,0];
   var C=s.criativo?add(P.criativo,(s.q.crComercial&&s.q.crCS)?P.criativoExtra:[0,0]):[0,0];
-  var prod=mx(mx(A,B),C);
-  var crit=(A[1]>=B[1]&&A[1]>=C[1])?'Marketing de Produto':(B[1]>=C[1]?'Vídeo com o designer':'Criativo');
+  var D=s.q.social>0?P.social[s.socn]:[0,0];
+  var E=s.q.emailNps>0?P.nps[s.npsn]:[0,0];
+  var tr=[[A,'Marketing de Produto'],[B,'Vídeo com o designer'],[C,'Criativo'],[D,'Redes sociais (designer)'],[E,'E-mail para NPS']];
+  var best=tr[0];tr.forEach(function(t){if(t[0][1]>best[0][1])best=t;});
+  var prod=[0,0];tr.forEach(function(t){prod=mx(prod,t[0]);});
+  var crit=best[1];
   var rev=P.revisao[s.porte],folga=P.folga[s.porte];
   var total=add(add(add(estudo,prod),rev),folga);
   return {estudo:estudo,prod:prod,crit:crit,rev:rev,folga:folga,total:total,ref:P.referencia[s.porte]};
@@ -730,15 +752,15 @@ function materiais(s){
   if(q.beamer)m.push({nome:'Aviso no Beamer',quem:MP,prazo:'incluído na copy; pedido do Suporte precisa de 5 dias de antecedência'});
   if(q.emailGeral)m.push({nome:pl(q.emailGeral,'e-mail para a base geral','e-mails para a base geral'),quem:MP,prazo:'disparo com mínimo de 1 dia'});
   if(q.emailSeg)m.push({nome:pl(q.emailSeg,'e-mail para a base segmentada (melhorias)','e-mails para a base segmentada (melhorias)'),quem:MP,prazo:'disparo com mínimo de 1 dia'});
-  if(q.emailNps)m.push({nome:pl(q.emailNps,'e-mail para NPS','e-mails para NPS'),quem:MP+' e CX',prazo:'disparo com mínimo de 1 dia; combinar com o calendário de NPS'});
+  if(q.emailNps)m.push({nome:pl(q.emailNps,'e-mail para NPS','e-mails para NPS'),quem:MP+' e CX',prazo:(q.emailNps?(s.npsn==='seg'?'2 dias mais 1 dia de espera pela lista segmentada':'1 a 2 dias, lista de NPS pronta'):'')+'; disparo com mínimo de 1 dia; combinar com o calendário de NPS'});
   if(q.whats)m.push({nome:pl(q.whats,'post na Comunidade Obra Prima','posts na Comunidade Obra Prima'),quem:MP,prazo:'incluído na copy'});
-  if(q.zap)m.push({nome:pl(q.zap,'disparo para WhatsApp','disparos para WhatsApp'),quem:MP,prazo:'incluído na copy'});
+  if(q.zap)m.push({nome:pl(q.zap,'disparo para WhatsApp','disparos para WhatsApp'),quem:MP,prazo:'1 dia, em paralelo às outras entregas'});
   if(q.youtube)m.push({nome:'Vídeo no YouTube ('+(s.dif?'abordagem diferente':'padrão de melhoria')+')',quem:MP+' (gravação) e Design (edição)',prazo:dd(add(P.gravacao,P.edicao))});
   if(q.miniVideos)m.push({nome:pl(q.miniVideos,'mini-vídeo para comercial','mini-vídeos para comercial'),quem:MP+' e Design',prazo:q.youtube?'+'+rng(P.videoExtra)+' dia por vídeo':dd(add(P.gravacao,P.edicao))});
   if(q.crComercial)m.push({nome:'Criativo para comercial',quem:'Design',prazo:dd(P.criativo)});
   if(q.crCS)m.push({nome:'Criativo para CS',quem:'Design',prazo:q.crComercial?'+'+rng(P.criativoExtra)+' dia (junto com o do comercial)':dd(P.criativo)});
-  if(q.social)m.push({nome:'Peças para redes sociais',quem:'Design (redes sociais)',prazo:'a definir com Design'});
-  if(q.playbook)m.push({nome:'Playbook de utilização (CS)',quem:MP+' e CX',prazo:'a definir'});
+  if(q.social)m.push({nome:'Peças para redes sociais',quem:'Design (redes sociais)',prazo:dd(P.social[s.socn])+' (designer de redes sociais)'});
+  if(q.playbook)m.push({nome:'Playbook de utilização (CS)',quem:MP+' e CX',prazo:dd(P.playbook[s.pbn])});
   if(s.deps.some(function(d){return d.id==='cxTreino';}))m.push({nome:'Treinamento para o CS',quem:'CX (treinamento e qualidade)',prazo:'a combinar com CX'});
   return m;
 }
@@ -910,6 +932,7 @@ function renderCamp(){
   $('t-abr').textContent='Nota '+s.abr;
   $('t-deps').textContent='Nota '+s.nDeps+' · '+s.deps.length+' '+(s.deps.length===1?'equipe':'equipes');
   $('vf-w').hidden=!s.temVideo;
+  $('pb-w').hidden=!(s.q.playbook>0);$('sc-w').hidden=!(s.q.social>0);$('np-w').hidden=!(s.q.emailNps>0);
   $('c-docw').hidden=$('c-doc').value!=='espera';
   $('c-segw').hidden=$('c-seg').value!=='espera';
   var sol=parseD($('c-solic').value)||new Date();
@@ -1583,7 +1606,7 @@ function setMode(m){
 function resetAll(){
   CFG.canais.forEach(function(k){if(k.tipo==='toggle')$('c-'+k.id).checked=false;else $('c-'+k.id).textContent='0';});
   $('c-artigos').textContent='0';
-  $('c-estudo').checked=false;$('c-vformato').value='padrao';
+  $('c-estudo').checked=false;$('c-vformato').value='padrao';$('c-pbnivel').value='simples';$('c-socnivel').value='n1';$('c-npslista').value='pronta';
   $('abr1').checked=true;
   CFG.deps.forEach(function(d){$('d-'+d.id).checked=false;});
   $('c-nome').value='';$('c-pedida').value='';$('c-doc').value='pronta';$('c-seg').value='pronta';
@@ -1663,6 +1686,8 @@ $('p-inicio').value=iso(new Date());
 renderSaved();
 setMode('campanha');
 initStore();
+})();
+</script>
 })();
 </script>
 
