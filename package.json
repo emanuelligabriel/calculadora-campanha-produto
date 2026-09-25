@@ -1,0 +1,7 @@
+{
+  "name": "calculadora-campanhas",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Calculadora de campanhas do Marketing de Produto",
+  "engines": { "node": ">=18" }
+}

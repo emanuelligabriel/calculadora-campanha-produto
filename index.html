@@ -1,0 +1,1261 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Calculadora de Campanhas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f1f1f0; --surface:#ffffff; --surface2:#f6f6f5; --ink:#252627; --muted:#66686a;
+  --line:#dcdcdc; --line-strong:#c4c4c4;
+  --accent:#fecf43; --accent-hover:#e49d21; --on-accent:#252627; --accent-soft:#fff2bf; --accent-text:#8c3210;
+  --sel-bg:#252627; --sel-ink:#fecf43; --focus:#252627;
+  --ok:#1f6b45; --ok-soft:#dff0e6; --warn:#8c3210; --warn-soft:#fde5d3; --bad:#b3261e; --bad-soft:#fadcd9;
+  --hd:#252627; --hd-ink:#f4f4f2; --hd-muted:#b9bbbd; --hd-grid:rgba(254,207,67,.09);
+  --sans:'Poppins',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --code:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#181819; --surface:#252627; --surface2:#1f2021; --ink:#f4f4f2; --muted:#a4a6a8;
+    --line:#3a3c3d; --line-strong:#505253;
+    --accent-soft:#3a3320; --accent-text:#fecf43; --sel-bg:#fecf43; --sel-ink:#252627; --focus:#fecf43;
+    --ok:#6fcf97; --ok-soft:#1d3327; --warn:#f0a96b; --warn-soft:#3d2a1b; --bad:#f28b82; --bad-soft:#3f2321;
+    --hd:#252627; --hd-grid:rgba(254,207,67,.07);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#181819; --surface:#252627; --surface2:#1f2021; --ink:#f4f4f2; --muted:#a4a6a8;
+  --line:#3a3c3d; --line-strong:#505253;
+  --accent-soft:#3a3320; --accent-text:#fecf43; --sel-bg:#fecf43; --sel-ink:#252627; --focus:#fecf43;
+  --ok:#6fcf97; --ok-soft:#1d3327; --warn:#f0a96b; --warn-soft:#3d2a1b; --bad:#f28b82; --bad-soft:#3f2321;
+  --hd:#252627; --hd-grid:rgba(254,207,67,.07);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.55 var(--sans);padding-inline:16px;padding-block:20px 104px;font-variant-numeric:tabular-nums}
+.wrap{max-width:1120px;margin:0 auto}
+header.top{display:grid;grid-template-columns:1fr auto;gap:14px 24px;align-items:end;margin-bottom:16px;padding:18px 20px;border-radius:6px;background-color:var(--hd);color:var(--hd-ink);border:1px solid var(--line);
+  background-image:linear-gradient(var(--hd-grid) 1px,transparent 1px),linear-gradient(90deg,var(--hd-grid) 1px,transparent 1px);background-size:28px 28px}
+.brand{grid-column:1/-1;display:flex;align-items:center;gap:10px;font-weight:600;font-size:13px;letter-spacing:.02em}
+.brand .mark{width:16px;height:16px;background:var(--accent);border-radius:2px;box-shadow:6px 6px 0 -1px #e58b12}
+.brand .wm{font-weight:700;font-size:15px}
+.brand .area{color:var(--hd-muted);font-weight:400}
+h1{font-size:26px;line-height:1.15;margin:0;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--hd-muted);margin:6px 0 0;font-size:13px;font-weight:300}
+.modes{display:inline-flex;flex-wrap:wrap;border:1px solid #4a4c4d;border-radius:6px;background:rgba(0,0,0,.25);padding:3px;gap:2px}
+.modes button{font:inherit;font-weight:500;color:var(--hd-ink);background:none;border:0;border-radius:4px;padding:7px 14px;cursor:pointer}
+.modes button:hover{background:rgba(255,255,255,.08)}
+.modes button[aria-selected="true"]{background:var(--accent);color:var(--on-accent);font-weight:600}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.modes button:focus-visible{outline-color:var(--accent)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
+.stack{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px 18px}
+.blk-h{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:4px;flex-wrap:wrap}
+h2{font-size:15px;margin:0;font-weight:600;display:flex;align-items:center;gap:9px}
+h2::before{content:"";width:9px;height:9px;background:var(--accent);border-radius:1px;flex:none}
+h3{font-size:11.5px;margin:16px 0 6px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.tag{font-size:12px;font-weight:600;color:var(--accent-text);background:var(--accent-soft);border-radius:3px;padding:2px 8px;white-space:nowrap}
+.hint{color:var(--muted);font-size:13px;margin:0 0 6px;font-weight:300}
+.row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:9px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.lbl{display:grid;gap:1px;min-width:0}
+.lbl small{color:var(--muted);font-size:12.5px;font-weight:300}
+.step{display:inline-flex;align-items:center;border:1px solid var(--line-strong);border-radius:4px;overflow:hidden;flex:none}
+.step button{width:34px;height:34px;border:0;background:var(--surface2);color:var(--ink);font-size:18px;cursor:pointer}
+.step button:hover{background:var(--accent);color:var(--on-accent)}
+.step output{min-width:36px;text-align:center;font-weight:600}
+input[type=checkbox],input[type=radio]{accent-color:#e58b12;width:18px;height:18px;flex:none;margin:0}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line);cursor:pointer}
+.opt:first-of-type{border-top:0}
+.opt .lbl{flex:1}
+.opt input{margin-top:3px}
+input[type=text],input[type=date],input[type=number],input[type=password],select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;padding:8px 10px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:64px}
+.f2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.field{display:grid;gap:4px}
+.field>span{font-size:13px;font-weight:500}
+.field small{color:var(--muted);font-size:12.5px;font-weight:300}
+.sub-opt{margin:2px 0 6px 28px}
+.res{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));display:grid;gap:14px}
+.porte{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.porte .nm{font-size:34px;font-weight:700;line-height:1.05;letter-spacing:-.01em}
+.porte .pts{color:var(--muted);font-size:13px;margin-top:4px}
+.dots{display:inline-flex;gap:5px}
+.dots i{width:16px;height:16px;border-radius:2px;border:2px solid var(--line-strong);display:block}
+.dots i.on{background:var(--accent);border-color:var(--ink)}
+.bd{display:grid;gap:0;margin-top:12px}
+.bd div{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 0;border-top:1px solid var(--line)}
+.bd b{font-weight:500}
+.bd small{grid-column:1;color:var(--muted);font-size:12.5px;font-weight:300}
+.bd .n{grid-row:1;grid-column:2;font-weight:600}
+.prazo{display:flex;align-items:baseline;gap:8px}
+.prazo .big{font-size:38px;font-weight:700;line-height:1}
+.prazo span:last-child{color:var(--muted)}
+.parts{list-style:none;margin:10px 0 0;padding:0}
+.parts li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:13.5px}
+.parts li b{font-weight:600}
+.parts li small{color:var(--muted);font-weight:300}
+.datas{display:grid;gap:4px;margin-top:10px;font-size:13.5px}
+.datas span{color:var(--muted)}
+.al{border-radius:4px;padding:9px 12px;font-size:13px;margin-top:8px}
+.al.info{background:var(--accent-soft);color:var(--ink)}
+.al.warn{background:var(--warn-soft);color:var(--warn)}
+.al.bad{background:var(--bad-soft);color:var(--bad)}
+.al.ok{background:var(--ok-soft);color:var(--ok)}
+.al b{font-weight:600}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn{font:inherit;font-weight:600;border-radius:4px;padding:8px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent)}
+.btn:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn.ghost{background:none;color:var(--ink);border-color:var(--line-strong);font-weight:500}
+.btn.ghost:hover{background:var(--surface2);border-color:var(--ink)}
+.btn.small{padding:4px 10px;font-size:12.5px}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line-strong);border-radius:4px;overflow:hidden}
+.seg button{font:inherit;font-size:13px;border:0;background:var(--surface2);color:var(--muted);padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--sel-bg);color:var(--sel-ink);font-weight:600}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:7px 10px;border-top:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600;border-top:0}
+td.k{font-weight:500;white-space:nowrap}
+details summary{cursor:pointer;font-weight:600;font-size:15px}
+.mini{position:fixed;left:0;right:0;bottom:0;z-index:5;display:none;justify-content:space-between;align-items:center;gap:12px;background:var(--hd);color:var(--hd-ink);border-top:3px solid var(--accent);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+.mini b{font-size:17px;font-weight:700}
+.mini span{font-size:13px;color:var(--hd-muted)}
+.ex{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-weight:300}
+.pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12.5px/1.6 var(--code);background:var(--surface2);border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin:12px 0 0;max-height:440px;overflow:auto;color:var(--ink)}
+.bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin:0 0 14px;font-size:13px;color:var(--muted)}
+.bar .who{display:flex;gap:8px;align-items:center}
+.bar input{width:170px;padding:5px 8px}
+#store-msg.warn{color:var(--warn)}
+#store-msg.bad{color:var(--bad)}
+#store-msg.ok{color:var(--ok)}
+#gate{margin-bottom:14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:8px}
+.stat{border:1px solid var(--line);border-radius:4px;padding:10px 12px;background:var(--surface2)}
+.stat b{display:block;font-size:24px;font-weight:700;line-height:1.1}
+.stat span{font-size:12px;color:var(--muted);font-weight:300}
+.filters{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end;margin:10px 0 6px}
+.filters label.chk{display:flex;gap:8px;align-items:center;font-size:13px;padding-bottom:9px}
+.st{font-size:12px;font-weight:600;border-radius:3px;padding:2px 8px;white-space:nowrap;background:var(--surface2);border:1px solid var(--line-strong)}
+.st.publicada{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
+.st.producao{background:var(--accent-soft);border-color:transparent;color:var(--accent-text)}
+.st.cancelada{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+.log{list-style:none;margin:8px 0 0;padding:0;font-size:13px}
+.log li{padding:6px 0;border-top:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap}
+.log li small{color:var(--muted);font-weight:300;min-width:92px}
+.tc{border:1px solid var(--line);border-radius:4px;margin-top:12px;overflow:hidden}
+.tc>h4{margin:0;padding:8px 12px;background:var(--surface2);font-size:13px;font-weight:600;border-bottom:1px solid var(--line)}
+.tc .ts{padding:10px 12px;border-top:1px solid var(--line)}
+.tc .ts:first-of-type{border-top:0}
+.tc .th{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tc .tv{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13.5px}
+.tc .tv.code{font:12.5px/1.6 var(--code)}
+.tc ul{margin:4px 0 0;padding-left:18px;font-size:13px;color:var(--muted)}
+@media (max-width:900px){
+  .grid{grid-template-columns:1fr}
+  .res{position:static}
+  .mini{display:flex}
+  header.top{grid-template-columns:1fr}
+  .filters{grid-template-columns:1fr 1fr}
+}
+body.hist .res,body.hist .mini,body.hist #rules-card{display:none!important}
+body.hist .grid{grid-template-columns:minmax(0,1fr)}
+@media (max-width:520px){
+  .f2{grid-template-columns:minmax(0,1fr)}
+  .porte .nm{font-size:30px}
+  h1{font-size:22px}
+  .modes{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .modes button{text-align:center}
+  .filters{grid-template-columns:minmax(0,1fr)}
+  #brief-t tr:first-child,#mat-t tr:first-child,#h-t tr:first-child{display:none}
+  #brief-t tr,#mat-t tr,#h-t tr{display:block;border-top:1px solid var(--line);padding:8px 0}
+  #brief-t td,#mat-t td,#h-t td{display:block;border:0;padding:1px 0;white-space:normal}
+  #brief-t td.k,#mat-t td.k{font-weight:600}
+  #h-t td[data-l]::before{content:attr(data-l) ": ";color:var(--muted);font-size:12px}
+}
+@media (prefers-reduced-motion:no-preference){ .btn,.modes button,.step button{transition:background .15s} }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><span class="wm">Obra Prima</span><span class="area">Marketing de Produto</span></div>
+    <div>
+      <h1>Calculadora de Campanhas</h1>
+      <p class="sub">Porte, prazo, briefing e cards a partir dos critérios do PDI</p>
+    </div>
+    <div class="modes" role="tablist" aria-label="Tipo de demanda">
+      <button type="button" role="tab" id="m-campanha" data-mode="campanha" aria-selected="true">Campanha</button>
+      <button type="button" role="tab" id="m-projeto" data-mode="projeto" aria-selected="false">Projeto</button>
+      <button type="button" role="tab" id="m-urgencia" data-mode="urgencia" aria-selected="false">Urgência</button>
+      <button type="button" role="tab" id="m-historico" data-mode="historico" aria-selected="false">Histórico</button>
+    </div>
+  </header>
+
+  <div class="card" id="gate" hidden>
+    <div class="blk-h"><h2>Senha da equipe</h2></div>
+    <p class="hint">Digite a senha para ver e salvar as campanhas compartilhadas.</p>
+    <div class="f2"><input type="password" id="pw" autocomplete="current-password" aria-label="Senha da equipe"><button type="button" class="btn" id="btn-pw" style="justify-self:start">Entrar</button></div>
+    <div class="al bad" id="pw-err" hidden>Senha incorreta. Tente de novo.</div>
+  </div>
+
+  <div class="bar">
+    <span id="store-msg" role="status">Conectando ao armazenamento...</span>
+    <span class="who"><label for="autor">Seu nome</label><input type="text" id="autor" placeholder="Ex.: Manu" autocomplete="name"><button type="button" class="btn ghost small" id="btn-refresh">Atualizar lista</button></span>
+  </div>
+
+  <div class="grid">
+    <div class="stack">
+
+      <!-- CAMPANHA -->
+      <div id="f-campanha" class="stack">
+        <div class="card">
+          <div class="field"><span>Nome da campanha</span><input type="text" id="c-nome" placeholder="Ex.: Novos modelos de RDO" autocomplete="off"></div>
+          <p class="ex" style="margin:10px 0 0">Vem um exemplo de campanha média preenchido. A campanha é salva sozinha assim que tiver um nome. <button type="button" class="btn ghost small" id="btn-limpar">Nova campanha</button></p>
+        </div>
+
+        <div class="card">
+          <div class="blk-h"><h2>Detalhes da campanha</h2></div>
+          <p class="hint">Vá preenchendo aos poucos. O resumo lá embaixo se atualiza sozinho e mostra o que ainda falta.</p>
+          <div class="stack">
+            <div class="f2">
+              <div class="field"><span>Frente no Trello</span><select id="c-frente"><option>Novidades do Sistema</option><option>Campanha</option><option>Central de Ajuda</option><option>Conteúdo</option></select></div>
+              <div class="field"><span>Status</span><select id="c-status"><option value="planejamento">Em planejamento</option><option value="producao">Em produção</option><option value="publicada">Publicada</option><option value="cancelada">Cancelada</option></select></div>
+            </div>
+            <div class="field" id="c-real-w" hidden><span>Publicada em (data real)</span><input type="date" id="c-real"><small>Vai para o histórico e serve para comparar o prazo real com o previsto.</small></div>
+            <div class="field"><span>O que muda</span><textarea id="c-desc" placeholder="Em poucas linhas: o que é a melhoria e o problema que ela resolve"></textarea></div>
+            <div class="field"><span>Mensagem principal</span><input type="text" id="c-msg" placeholder="O que o cliente precisa saber, em uma frase" autocomplete="off"></div>
+            <div class="f2">
+              <div class="field"><span>Responsável em Produto</span><input type="text" id="c-resp" autocomplete="off"></div>
+              <div class="field"><span>Quem aprova a comunicação</span><input type="text" id="c-aprov" autocomplete="off"></div>
+            </div>
+            <div class="field"><span>Links de apoio</span><textarea id="c-links" placeholder="Documentação, protótipo, prints, ambiente de teste"></textarea></div>
+            <div class="field"><span>Observações e riscos</span><textarea id="c-obs"></textarea></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="blk-h"><h2>1. Canais</h2><span class="tag" id="t-canais">Nota 1</span></div>
+          <p class="hint">Cada envio ou entrega vale 1 ponto. Três e-mails valem 3 pontos. Criativos, playbook, vídeos e redes sociais também contam.</p>
+          <div id="canais"></div>
+        </div>
+
+        <div class="card">
+          <div class="blk-h"><h2>2. Esforço de produção</h2><span class="tag" id="t-esforco">Nota 1</span></div>
+          <p class="hint">Artigo e e-mail são o padrão e não pontuam. A nota vem dos vídeos e criativos marcados em Canais.</p>
+          <div class="row"><div class="lbl"><span>Artigos novos</span><small>Prazo cresce com a quantidade</small></div>
+            <div class="step"><button type="button" data-step="c-artigos" data-d="-1" data-max="4" aria-label="Menos artigos">−</button><output id="c-artigos">1</output><button type="button" data-step="c-artigos" data-d="1" data-max="4" aria-label="Mais artigos">+</button></div></div>
+          <label class="opt" for="c-estudo"><input type="checkbox" id="c-estudo"><span class="lbl"><span>Melhoria grande, exige estudar o sistema</span><small>Soma 1 a 2 dias de estudo antes de produzir</small></span></label>
+          <div class="sub-opt" id="vf-w" hidden>
+            <div class="field"><span>Formato do vídeo</span>
+              <select id="c-vformato"><option value="padrao">Padrão de melhoria do sistema</option><option value="diferente">Abordagem diferente do padrão</option></select></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="blk-h"><h2>3. Abrangência</h2><span class="tag" id="t-abr">Nota 2</span></div>
+          <p class="hint">Quem recebe a comunicação.</p>
+          <div id="abr"></div>
+        </div>
+
+        <div class="card">
+          <div class="blk-h"><h2>4. Dependências</h2><span class="tag" id="t-deps">Nota 1</span></div>
+          <p class="hint">Marketing de Produto sozinho é o ponto de partida. Marque cada equipe extra que a campanha exige.</p>
+          <div id="deps"></div>
+        </div>
+
+        <div class="card">
+          <div class="blk-h"><h2>Datas e pré-requisitos</h2></div>
+          <p class="hint">O relógio só começa quando documentação e segmentação chegam.</p>
+          <div class="f2">
+            <div class="field"><span>Data da solicitação</span><input type="date" id="c-solic"></div>
+            <div class="field"><span>Entrada em produção</span><input type="date" id="c-prod"></div>
+          </div>
+          <div class="field" style="margin-top:12px"><span>Data da comunicação aos clientes</span><input type="date" id="c-pedida"><small>Pedida ou já fechada. Compara com o prazo.</small></div>
+          <div class="field" style="margin-top:12px"><span>Documentação de produto</span>
+            <select id="c-doc"><option value="pronta">Já recebida</option><option value="espera">Ainda não chegou</option></select></div>
+          <div class="f2" id="c-docw" style="margin-top:12px" hidden>
+            <div class="field"><span>Chega em quantos dias úteis?</span><input type="number" id="c-docdias" min="1" max="30" value="2"><small>Combinado: até 2 dias úteis após a solicitação.</small></div>
+            <div class="field"><span>Ou em que data</span><input type="date" id="c-docate"><small>Se preencher a data, ela vale no lugar dos dias.</small></div>
+          </div>
+          <div class="field" style="margin-top:12px"><span>Segmentação</span>
+            <select id="c-seg"><option value="pronta">Já está pronta</option><option value="nao">Não preciso de segmentação</option><option value="espera">Ainda não chegou</option></select></div>
+          <div class="f2" id="c-segw" style="margin-top:12px" hidden>
+            <div class="field"><span>Chega em quantos dias úteis?</span><input type="number" id="c-segdias" min="1" max="30" value="3"></div>
+            <div class="field"><span>Ou em que data</span><input type="date" id="c-segate"></div>
+          </div>
+        </div>
+
+        <div class="card" id="sum-card">
+          <div class="blk-h"><h2>Resumo da campanha</h2></div>
+          <h3 style="margin-top:8px">Materiais a produzir</h3>
+          <div class="tbl"><table id="mat-t"></table></div>
+          <div id="pend"></div>
+          <div class="blk-h" style="margin-top:18px">
+            <div class="seg" id="sum-seg" role="group" aria-label="Tipo de resumo">
+              <button type="button" data-s="interno" aria-pressed="true">Resumo interno</button>
+              <button type="button" data-s="produto" aria-pressed="false">Para Produto</button>
+              <button type="button" data-s="trello" aria-pressed="false">Card do Trello</button>
+              <button type="button" data-s="contexto" aria-pressed="false">Contexto para o Claude</button>
+            </div>
+          </div>
+          <div id="trello-box" hidden></div>
+          <pre class="pre" id="sum-pre"></pre>
+          <div class="btns"><button type="button" class="btn" id="btn-sumcopy">Copiar resumo interno</button></div>
+        </div>
+      </div>
+
+      <!-- PROJETO -->
+      <div id="f-projeto" class="stack" hidden>
+        <div class="card">
+          <div class="blk-h"><h2>Projeto (processo)</h2></div>
+          <p class="hint">Projetos com equipes ou entregas externas ficam fora da pontuação. O prazo é de 1 sprint (5 dias úteis) ou mais, definido caso a caso.</p>
+          <div class="field"><span>Nome do projeto</span><input type="text" id="p-nome" placeholder="Ex.: Redesign do e-mail de boas-vindas" autocomplete="off"></div>
+          <div class="f2" style="margin-top:12px">
+            <div class="field"><span>Início</span><input type="date" id="p-inicio"></div>
+            <div class="field"><span>Sprints estimadas</span>
+              <div class="step" style="width:max-content"><button type="button" data-step="p-sprints" data-d="-1" data-max="8" data-min="1" aria-label="Menos sprints">−</button><output id="p-sprints">1</output><button type="button" data-step="p-sprints" data-d="1" data-max="8" data-min="1" aria-label="Mais sprints">+</button></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="blk-h"><h2>Antes de começar</h2></div>
+          <div class="stack">
+            <div class="field"><span>Objetivo e o que entra no MVP</span><textarea id="p-obj"></textarea></div>
+            <div class="field"><span>Quem participa e o que cada equipe entrega</span><textarea id="p-quem"></textarea></div>
+            <div class="field"><span>Critério de aprovação do MVP</span><textarea id="p-crit"></textarea></div>
+            <div class="field"><span>Prazo negociado para o MVP e para a versão final</span><textarea id="p-prazo"></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- URGENCIA -->
+      <div id="f-urgencia" class="stack" hidden>
+        <div class="card">
+          <div class="blk-h"><h2>Urgência</h2></div>
+          <p class="hint">Problema imprevisto que o CS ou o Suporte precisa comunicar. Fica fora do porte e não tem folga.</p>
+          <div class="field"><span>Descrição curta</span><input type="text" id="u-nome" placeholder="Ex.: Instabilidade no login" autocomplete="off"></div>
+          <div style="margin-top:12px">
+            <label class="opt" for="u-sis"><input type="radio" name="u-tipo" id="u-sis" value="sis" checked><span class="lbl"><span>Anúncio dentro do sistema ou e-mail de urgência</span><small>15 a 30 minutos</small></span></label>
+            <label class="opt" for="u-base"><input type="radio" name="u-tipo" id="u-base" value="base"><span class="lbl"><span>E-mail para a base por mudança urgente</span><small>Mínimo de 1 dia útil, para criar com calma e disparar da melhor forma</small></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- BRIEFING -->
+      <div class="card" id="brief-card">
+        <div class="blk-h"><h2>Briefing para Produto</h2>
+          <div class="seg" id="brief-seg" role="group" aria-label="Modelo de briefing">
+            <button type="button" data-b="Pequena" aria-pressed="false">Pequena</button>
+            <button type="button" data-b="Média" aria-pressed="false">Média</button>
+            <button type="button" data-b="Grande" aria-pressed="false">Grande</button>
+          </div>
+        </div>
+        <p class="hint" id="brief-hint"></p>
+        <div class="tbl"><table id="brief-t"></table></div>
+        <div class="btns"><button type="button" class="btn" id="btn-brief">Copiar briefing</button><button type="button" class="btn ghost" id="btn-auto" hidden>Usar o porte calculado</button></div>
+      </div>
+
+      <!-- HISTORICO -->
+      <div id="f-historico" class="stack" hidden>
+        <div class="card">
+          <div class="blk-h"><h2>Painel</h2></div>
+          <p class="hint">Tudo o que já passou pela calculadora, guardado em um só lugar.</p>
+          <div class="stats" id="h-stats"></div>
+        </div>
+        <div class="card">
+          <div class="blk-h"><h2>Campanhas, projetos e urgências</h2><button type="button" class="btn ghost small" id="btn-csv">Copiar para planilha</button></div>
+          <div class="filters">
+            <div class="field"><span>Buscar</span><input type="text" id="h-q" placeholder="Nome" autocomplete="off"></div>
+            <div class="field"><span>Status</span><select id="h-st"><option value="">Todos</option><option value="planejamento">Em planejamento</option><option value="producao">Em produção</option><option value="publicada">Publicada</option><option value="cancelada">Cancelada</option></select></div>
+            <div class="field"><span>Tipo</span><select id="h-pt"><option value="">Todos</option><option>Pequena</option><option>Média</option><option>Grande</option><option>Projeto</option><option>Urgência</option></select></div>
+            <label class="chk"><input type="checkbox" id="h-arq"> Mostrar arquivadas</label>
+          </div>
+          <div class="tbl"><table id="h-t"></table></div>
+        </div>
+        <div class="card">
+          <div class="blk-h"><h2>Atividade recente</h2></div>
+          <ul class="log" id="h-log"></ul>
+        </div>
+      </div>
+
+      <!-- REGRAS -->
+      <div class="card" id="rules-card">
+        <details><summary>Regras usadas no cálculo</summary><div id="rules"></div></details>
+      </div>
+
+      <div class="card" id="fb-w" hidden>
+        <p class="hint">A cópia automática não funcionou neste navegador. Selecione o texto abaixo e copie.</p>
+        <textarea id="fb" style="min-height:160px"></textarea>
+      </div>
+    </div>
+
+    <aside class="res" aria-label="Resultado">
+      <div class="card" id="res"></div>
+    </aside>
+  </div>
+</div>
+<div class="mini" id="mini" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+var CFG={
+  canais:[
+    {id:'emailGeral',nome:'E-mail para a base geral',tipo:'count',max:5},
+    {id:'emailSeg',nome:'E-mail para a base segmentada (melhorias)',tipo:'count',max:5},
+    {id:'emailNps',nome:'E-mail para NPS',tipo:'count',max:3,dica:'Combine com o calendário de NPS'},
+    {id:'whats',nome:'Comunidade Obra Prima',tipo:'count',max:8,dica:'Post único vale 1. Sequência vale 1 por post.'},
+    {id:'beamer',nome:'Beamer',tipo:'toggle'},
+    {id:'zap',nome:'Disparo para WhatsApp',tipo:'count',max:5},
+    {id:'crComercial',nome:'Criativo para comercial',tipo:'toggle'},
+    {id:'crCS',nome:'Criativo para CS',tipo:'toggle'},
+    {id:'playbook',nome:'Playbook de utilização (CS)',tipo:'toggle'},
+    {id:'youtube',nome:'Vídeo no YouTube',tipo:'toggle'},
+    {id:'miniVideos',nome:'Mini-vídeos para comercial',tipo:'count',max:5},
+    {id:'social',nome:'Redes sociais',tipo:'toggle',dica:'Aciona a designer de redes sociais'}
+  ],
+  faixasCanais:[{min:1,max:2,nota:1},{min:3,max:5,nota:2},{min:6,max:99,nota:3}],
+  faixasPorte:[{min:4,max:6,nome:'Pequena'},{min:7,max:9,nome:'Média'},{min:10,max:12,nome:'Grande'}],
+  abr:[
+    {nota:1,nome:'Dezenas de pessoas',ex:'Ex.: e-mail de melhorias (15 a 20 pessoas)'},
+    {nota:2,nome:'Segmento, na casa dos milhares',ex:'Ex.: MCP, administradores de construtoras (2 a 3 mil)'},
+    {nota:3,nome:'Base inteira',ex:'Ex.: novos modelos de RDO'}
+  ],
+  deps:[
+    {id:'design',nome:'Design',ex:'Edição de vídeo, criativos e redes sociais'},
+    {id:'cxDados',nome:'CX (dados)',ex:'Segmentação por promotores, neutros, detratores ou quem pediu melhoria'},
+    {id:'cxTreino',nome:'CX (treinamento e qualidade)',ex:'Sempre que a campanha vai para o CS'},
+    {id:'produto',nome:'Produto',ex:'Entrega a segmentação ou valida a comunicação'}
+  ],
+  depNota:function(n){return n===0?1:(n===1?2:3);},
+  prazos:{
+    estudo:[1,2],copy:[1,2],gravacao:[1,1],edicao:[2,3],videoExtra:[1,1],criativo:[2,4],criativoExtra:[1,1],
+    artigo:{0:[0,0],1:[1,1],2:[2,2],3:[2,3],4:[3,3]},
+    revisao:{'Pequena':[0,0],'Média':[1,1],'Grande':[1,1]},
+    folga:{'Pequena':[1,1],'Média':[2,3],'Grande':[2,3]},
+    referencia:{'Pequena':[2,3],'Média':[6,8],'Grande':[9,11]},
+    sprint:5,docMax:2
+  }
+};
+var BRIEF={
+  'Pequena':[
+    ['Nome da melhoria','Nome e link da documentação'],
+    ['Responsável','Quem em Produto e quem no desenvolvimento'],
+    ['Data de entrada em produção','Data prevista (e data de teste, se houver)'],
+    ['O que muda','Descrição em poucas linhas'],
+    ['Impacto para o cliente','Quem é afetado e se o cliente precisa fazer algo'],
+    ['Há segmentação?','Sim ou não. Se não, a comunicação vai para toda a base?'],
+    ['Segmentação já está pronta?','Sim ou não. Se sim, link da lista'],
+    ['Se não está pronta','Quem entrega e em quantos dias úteis'],
+    ['Há documentação de produto?','Sim ou não. Se não, em quantos dias úteis entrega (máximo de 2 após a solicitação)']
+  ],
+  'Média':[
+    ['Problema que resolve','Como era antes e como fica depois'],
+    ['Mudança no uso do dia a dia','O que o cliente passa a fazer diferente'],
+    ['Limitações','O que a funcionalidade não faz'],
+    ['Público','Quem deve receber a comunicação e critério de segmentação'],
+    ['Materiais de apoio','Prints, protótipos, vídeos brutos, acesso ao ambiente de teste'],
+    ['Mensagem principal','Uma frase com o que o cliente precisa saber'],
+    ['O que não pode ser prometido','Limites da comunicação'],
+    ['Quem aprova','Pessoa que valida antes de ir aos clientes'],
+    ['Suporte e CS','O Suporte precisa de aviso prévio? Precisa de treinamento? (Aviso no Beamer pedido pelo Suporte: 5 dias de antecedência)'],
+    ['Prazos e riscos','Data limite da documentação e o que pode atrasar a entrega'],
+    ['Resultado esperado','Qual métrica indica sucesso (abertura, clique, adoção) e a meta, se houver']
+  ],
+  'Grande':[
+    ['Acesso para estudo','Ambiente de teste ou homologação e quem tira dúvidas no desenvolvimento'],
+    ['Impacto no fluxo do cliente','Telas, botões e fluxos que mudam (afeta artigos e vídeos já publicados?)'],
+    ['Segmentação por perfil','Promotores, neutros, detratores ou quem pediu melhoria, e quem entrega cada lista'],
+    ['Público dos criativos','Criativos para Comercial, para CS ou para os dois'],
+    ['Treinamento','O CS precisa ser treinado? Quem tira dúvidas do lado do CS?'],
+    ['Marcos e datas','Data de teste, de liberação e de comunicação, com lançamentos que se sobrepõem'],
+    ['Riscos e plano B','Chance de mudança de escopo ou de data e o que muda na comunicação'],
+    ['FAQ','Perguntas que o Suporte já recebe ou espera receber'],
+    ['Calendário de NPS','A campanha coincide com alguma pesquisa de NPS?']
+  ]
+};
+var INI={canais:{beamer:1,emailGeral:0,emailSeg:1,whats:1,youtube:1},artigos:1,abr:2,deps:{design:1,cxDados:1,cxTreino:0,produto:0}};
+
+var $=function(id){return document.getElementById(id);};
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var add=function(a,b){return [a[0]+b[0],a[1]+b[1]];};
+var mx=function(a,b){return [Math.max(a[0],b[0]),Math.max(a[1],b[1])];};
+var mul=function(a,k){return [a[0]*k,a[1]*k];};
+var rng=function(a){return a[0]===a[1]?String(a[0]):a[0]+' a '+a[1];};
+var dd=function(a){return rng(a)+(a[1]===1?' dia':' dias');};
+var rng2=function(a){return a[0]===a[1]?String(a[0]):a[0]+'–'+a[1];};
+var z2=function(n){return String(n).padStart(2,'0');};
+function iso(d){return d.getFullYear()+'-'+z2(d.getMonth()+1)+'-'+z2(d.getDate());}
+function parseD(s){if(!s)return null;var p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}
+function addBD(d,n){var r=new Date(d),k=n;while(k>0){r.setDate(r.getDate()+1);var w=r.getDay();if(w!==0&&w!==6)k--;}return r;}
+function bdDiff(a,b){var s=b>=a?1:-1,x=new Date(a),c=0,guard=0;while(iso(x)!==iso(b)&&guard<800){x.setDate(x.getDate()+s);var w=x.getDay();if(w!==0&&w!==6)c+=s;guard++;}return c;}
+function fmt(d){return d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'});}
+function dias(n){return n+' '+(n===1?'dia útil':'dias úteis');}
+
+var mode='campanha',briefAuto=true,briefSel='Média',lastResumo='',lastProduto='',lastSave=null,sumSel='interno';
+var saved=[],currentId=null,currentRev=0,storeMode='pending',protectedApp=true,conflict=null,saveTimer=null,savedSig='',pwTried=false;
+var lastContexto='',trelloParts=[],trelloAll='';
+var STL={planejamento:'Em planejamento',producao:'Em produção',publicada:'Publicada',cancelada:'Cancelada'};
+var LKEY='calc-campanhas-local-v2',PKEY='calc-campanhas-senha',AKEY='calc-campanhas-autor';
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+
+/* ---------- build static parts ---------- */
+function buildCanais(){
+  $('canais').innerHTML=CFG.canais.map(function(k){
+    var v=INI.canais[k.id]||0;
+    var dica=k.dica?'<small>'+esc(k.dica)+'</small>':'';
+    if(k.tipo==='toggle'){
+      return '<label class="row" for="c-'+k.id+'" style="cursor:pointer"><span class="lbl"><span>'+esc(k.nome)+'</span>'+dica+'</span><input type="checkbox" id="c-'+k.id+'"'+(v?' checked':'')+'></label>';
+    }
+    return '<div class="row"><span class="lbl"><span>'+esc(k.nome)+'</span>'+dica+'</span><div class="step"><button type="button" data-step="c-'+k.id+'" data-d="-1" data-max="'+k.max+'" aria-label="Menos: '+esc(k.nome)+'">−</button><output id="c-'+k.id+'">'+v+'</output><button type="button" data-step="c-'+k.id+'" data-d="1" data-max="'+k.max+'" aria-label="Mais: '+esc(k.nome)+'">+</button></div></div>';
+  }).join('');
+}
+function buildAbr(){
+  $('abr').innerHTML=CFG.abr.map(function(a){
+    return '<label class="opt" for="abr'+a.nota+'"><input type="radio" name="abr" id="abr'+a.nota+'" value="'+a.nota+'"'+(a.nota===INI.abr?' checked':'')+'><span class="lbl"><span>'+esc(a.nome)+'</span><small>'+esc(a.ex)+'</small></span></label>';
+  }).join('');
+}
+function buildDeps(){
+  $('deps').innerHTML=CFG.deps.map(function(d){
+    return '<label class="opt" for="d-'+d.id+'"><input type="checkbox" id="d-'+d.id+'"'+(INI.deps[d.id]?' checked':'')+'><span class="lbl"><span>'+esc(d.nome)+'</span><small>'+esc(d.ex)+'</small></span></label>';
+  }).join('');
+}
+function buildRules(){
+  var P=CFG.prazos;
+  function tb(h,body){return '<h3>'+h+'</h3><div class="tbl"><table>'+body+'</table></div>';}
+  var h='';
+  h+=tb('Canais',
+    '<tr><th>Item</th><th class="m">Pontos</th></tr>'+CFG.canais.map(function(k){return '<tr><td>'+esc(k.nome)+'</td><td class="m">1 por envio</td></tr>';}).join('')
+    +'<tr><th>Soma de pontos</th><th class="m">Nota</th></tr>'+CFG.faixasCanais.map(function(f){return '<tr><td>'+(f.max>=99?f.min+' ou mais':(f.min===f.max?f.min:f.min+' a '+f.max))+'</td><td class="m">'+f.nota+'</td></tr>';}).join(''));
+  h+=tb('Esforço de produção','<tr><th>Nota</th><th>O que a mudança pede</th></tr><tr><td class="m">1</td><td>Só o padrão (artigo e e-mail), com GIF se ajudar</td></tr><tr><td class="m">2</td><td>Padrão com vídeo de melhoria ou com um criativo</td></tr><tr><td class="m">3</td><td>Criativo e vídeo, ou vídeo com abordagem diferente do padrão</td></tr>');
+  h+=tb('Abrangência','<tr><th>Nota</th><th>Público</th></tr>'+CFG.abr.map(function(a){return '<tr><td class="m">'+a.nota+'</td><td>'+esc(a.nome)+'</td></tr>';}).join(''));
+  h+=tb('Dependências','<tr><th>Equipes extras</th><th class="m">Nota</th></tr><tr><td>Nenhuma</td><td class="m">1</td></tr><tr><td>1 equipe</td><td class="m">2</td></tr><tr><td>2 ou mais</td><td class="m">3</td></tr>');
+  h+=tb('Porte pela soma das 4 notas','<tr><th>Soma</th><th>Porte</th></tr>'+CFG.faixasPorte.map(function(f){return '<tr><td class="m">'+f.min+' a '+f.max+'</td><td>'+f.nome+'</td></tr>';}).join(''));
+  h+=tb('Prazos por entregável (dias úteis)',
+    '<tr><th>Entregável</th><th class="m">Prazo</th></tr>'
+    +'<tr><td>Estudo da melhoria</td><td class="m">'+rng(P.estudo)+'</td></tr>'
+    +'<tr><td>Copy (e-mail, comunicado)</td><td class="m">'+rng(P.copy)+'</td></tr>'
+    +'<tr><td>Artigo: 1 / 2 / 3 / 4</td><td class="m">1 / 2 / 2 a 3 / 3</td></tr>'
+    +'<tr><td>Vídeo: gravar + editar com o designer</td><td class="m">'+rng(add(P.gravacao,P.edicao))+'</td></tr>'
+    +'<tr><td>Mini-vídeo (cada vídeo além do primeiro)</td><td class="m">+'+rng(P.videoExtra)+'</td></tr>'
+    +'<tr><td>Criativo</td><td class="m">'+rng(P.criativo)+'</td></tr>'
+    +'<tr><td>Criativo para comercial e para CS juntos</td><td class="m">+'+rng(P.criativoExtra)+'</td></tr>'
+    +'<tr><td>Revisão: pequena / média / grande</td><td class="m">0 / 1 / 1</td></tr>'
+    +'<tr><td>Folga: pequena / média / grande</td><td class="m">1 / 2 a 3 / 2 a 3</td></tr>'
+    +'<tr><td>Aviso no Beamer pedido pelo Suporte</td><td class="m">5 dias de antecedência</td></tr>');
+  h+='<p class="hint" style="margin-top:12px">O prazo é o caminho crítico: Marketing de Produto (gravação, copy e artigos), vídeo com o designer e criativo andam em paralelo. Feriados não entram na conta de datas. Cada mini-vídeo além do primeiro vídeo soma 1 dia, e ter criativo para comercial e para CS soma 1 dia: são estimativas a confirmar. Playbook, redes sociais, disparo de WhatsApp e e-mail de NPS ainda não têm prazo próprio.</p>';
+  $('rules').innerHTML=h;
+}
+
+/* ---------- reading state ---------- */
+function n(id){return +$(id).textContent;}
+function c(id){return $(id).checked;}
+function critDest(s){return s.q.crComercial&&s.q.crCS?'Comercial e CS':(s.q.crCS?'CS':'Comercial');}
+function readCamp(){
+  var q={};
+  CFG.canais.forEach(function(k){q[k.id]=k.tipo==='toggle'?(c('c-'+k.id)?1:0):n('c-'+k.id);});
+  var pts=0;CFG.canais.forEach(function(k){pts+=q[k.id];});
+  var fc=CFG.faixasCanais.filter(function(f){return pts>=f.min&&pts<=f.max;})[0];
+  var nCanais=pts===0?1:(fc?fc.nota:3);
+  var temVideo=q.youtube>0||q.miniVideos>0;
+  var criativo=q.crComercial>0||q.crCS>0;
+  var dif=temVideo&&$('c-vformato').value==='diferente';
+  var nEsf=dif?3:((temVideo&&criativo)?3:((temVideo||criativo)?2:1));
+  var abr=+(document.querySelector('input[name=abr]:checked')||{value:1}).value;
+  var deps=CFG.deps.filter(function(d){return c('d-'+d.id);});
+  var nDeps=CFG.depNota(deps.length);
+  var soma=nCanais+nEsf+abr+nDeps;
+  var porte=CFG.faixasPorte.filter(function(f){return soma>=f.min&&soma<=f.max;})[0].nome;
+  return {q:q,pts:pts,nCanais:nCanais,temVideo:temVideo,criativo:criativo,dif:dif,nEsf:nEsf,abr:abr,deps:deps,nDeps:nDeps,soma:soma,porte:porte,
+    artigos:n('c-artigos'),estudo:c('c-estudo'),nome:$('c-nome').value.trim()};
+}
+
+/* ---------- campanha ---------- */
+function calcPrazo(s){
+  var P=CFG.prazos;
+  var estudo=s.estudo?P.estudo:[0,0];
+  var nVid=(s.q.youtube>0?1:0)+s.q.miniVideos;
+  var A=add(add(s.temVideo?P.gravacao:[0,0],P.copy),P.artigo[s.artigos]);
+  var B=s.temVideo?add(add(P.gravacao,P.edicao),mul(P.videoExtra,Math.max(0,nVid-1))):[0,0];
+  var C=s.criativo?add(P.criativo,(s.q.crComercial&&s.q.crCS)?P.criativoExtra:[0,0]):[0,0];
+  var prod=mx(mx(A,B),C);
+  var crit=(A[1]>=B[1]&&A[1]>=C[1])?'Marketing de Produto':(B[1]>=C[1]?'Vídeo com o designer':'Criativo');
+  var rev=P.revisao[s.porte],folga=P.folga[s.porte];
+  var total=add(add(add(estudo,prod),rev),folga);
+  return {estudo:estudo,prod:prod,crit:crit,rev:rev,folga:folga,total:total,ref:P.referencia[s.porte]};
+}
+function descCanais(s){
+  var t=[];
+  CFG.canais.forEach(function(k){var v=s.q[k.id];if(!v)return;t.push(k.tipo==='toggle'?k.nome:v+'× '+k.nome.charAt(0).toLowerCase()+k.nome.slice(1));});
+  return t.length?t.join('; '):'nenhum canal marcado';
+}
+function descEsforco(s){
+  var t=[];
+  if(s.artigos)t.push(s.artigos+' '+(s.artigos===1?'artigo':'artigos'));
+  if(s.temVideo)t.push(s.dif?'vídeo com abordagem diferente':'vídeo padrão');
+  if(s.criativo)t.push('criativo para '+critDest(s));
+  if(s.estudo)t.push('estudo da melhoria');
+  return t.length?t.join('; '):'só copy e e-mail';
+}
+function materiais(s){
+  var P=CFG.prazos,m=[],q=s.q,MP='Marketing de Produto';
+  var pl=function(n,a,b){return n+' '+(n===1?a:b);};
+  if(s.estudo)m.push({nome:'Estudo da melhoria',quem:MP,prazo:dd(P.estudo)});
+  m.push({nome:'Copy da comunicação',quem:MP,prazo:dd(P.copy)});
+  if(s.artigos)m.push({nome:pl(s.artigos,'artigo','artigos'),quem:MP,prazo:dd(P.artigo[s.artigos])});
+  if(q.beamer)m.push({nome:'Aviso no Beamer',quem:MP,prazo:'incluído na copy; pedido do Suporte precisa de 5 dias de antecedência'});
+  if(q.emailGeral)m.push({nome:pl(q.emailGeral,'e-mail para a base geral','e-mails para a base geral'),quem:MP,prazo:'disparo com mínimo de 1 dia'});
+  if(q.emailSeg)m.push({nome:pl(q.emailSeg,'e-mail para a base segmentada (melhorias)','e-mails para a base segmentada (melhorias)'),quem:MP,prazo:'disparo com mínimo de 1 dia'});
+  if(q.emailNps)m.push({nome:pl(q.emailNps,'e-mail para NPS','e-mails para NPS'),quem:MP+' e CX',prazo:'disparo com mínimo de 1 dia; combinar com o calendário de NPS'});
+  if(q.whats)m.push({nome:pl(q.whats,'post na Comunidade Obra Prima','posts na Comunidade Obra Prima'),quem:MP,prazo:'incluído na copy'});
+  if(q.zap)m.push({nome:pl(q.zap,'disparo para WhatsApp','disparos para WhatsApp'),quem:MP,prazo:'incluído na copy'});
+  if(q.youtube)m.push({nome:'Vídeo no YouTube ('+(s.dif?'abordagem diferente':'padrão de melhoria')+')',quem:MP+' (gravação) e Design (edição)',prazo:dd(add(P.gravacao,P.edicao))});
+  if(q.miniVideos)m.push({nome:pl(q.miniVideos,'mini-vídeo para comercial','mini-vídeos para comercial'),quem:MP+' e Design',prazo:q.youtube?'+'+rng(P.videoExtra)+' dia por vídeo':dd(add(P.gravacao,P.edicao))});
+  if(q.crComercial)m.push({nome:'Criativo para comercial',quem:'Design',prazo:dd(P.criativo)});
+  if(q.crCS)m.push({nome:'Criativo para CS',quem:'Design',prazo:q.crComercial?'+'+rng(P.criativoExtra)+' dia (junto com o do comercial)':dd(P.criativo)});
+  if(q.social)m.push({nome:'Peças para redes sociais',quem:'Design (redes sociais)',prazo:'a definir com Design'});
+  if(q.playbook)m.push({nome:'Playbook de utilização (CS)',quem:MP+' e CX',prazo:'a definir'});
+  if(s.deps.some(function(d){return d.id==='cxTreino';}))m.push({nome:'Treinamento para o CS',quem:'CX (treinamento e qualidade)',prazo:'a combinar com CX'});
+  return m;
+}
+function snap(m){
+  var o={};
+  $('f-'+m).querySelectorAll('input,textarea,select,output').forEach(function(e){
+    if(e.type==='radio'){if(e.checked)o['r:'+e.name]=e.value;return;}
+    if(!e.id)return;
+    if(e.type==='checkbox')o[e.id]=e.checked;
+    else if(e.tagName==='OUTPUT')o[e.id]=e.textContent;
+    else o[e.id]=e.value;
+  });
+  return o;
+}
+function unsnap(m,o){
+  $('f-'+m).querySelectorAll('input,textarea,select,output').forEach(function(e){
+    if(e.type==='radio'){var k='r:'+e.name;if(k in o)e.checked=(e.value===o[k]);return;}
+    if(!e.id||!(e.id in o))return;
+    if(e.type==='checkbox')e.checked=!!o[e.id];
+    else if(e.tagName==='OUTPUT')e.textContent=o[e.id];
+    else e.value=o[e.id];
+  });
+}
+function plur(n,a,b){return n+' '+(n===1?a:b);}
+function fimFrase(t){t=String(t||'').trim();return /[.!?]$/.test(t)?t:t+'.';}
+function trelloCards(x){
+  var s=x.s,q=s.q,g=x.g,P=CFG.prazos,cards=[];
+  var nomeTxt=s.nome||'[nome da campanha]';
+  var aprov=g('c-aprov')||'[quem aprova: a definir]';
+  var pub=x.ped?x.comTxt:'[data a definir]';
+  var resp=g('c-resp')||'[a definir]';
+  var etiqueta=(x.dateStatus==='bad'||x.dateStatus==='warn')?'prioridade':'[a definir]';
+  var data=x.ped?x.comTxt:'[a definir] (entrega prevista do Marketing: '+x.entrega+')';
+  var prodNomes=x.mats.filter(function(m){return m.nome!=='Estudo da melhoria';}).map(function(m){return m.nome.charAt(0).toLowerCase()+m.nome.slice(1);});
+  var links=g('c-links').replace(/\s*\n\s*/g,', ');
+  /* ---- card principal */
+  var d=[];
+  d.push('**O QUE FAZER**');
+  d.push('Produzir e publicar a comunicação da campanha “'+nomeTxt+'”: '+prodNomes.join(', ')+'.');
+  d.push('');
+  d.push('**OBJETIVO**');
+  var obj='Comunicar a novidade aos clientes (público: '+CFG.abr[s.abr-1].nome.toLowerCase()+'). ';
+  obj+=g('c-desc')?'O que muda: '+fimFrase(g('c-desc')):'[O que muda: a definir.]';
+  if(g('c-msg'))obj+=' Mensagem principal: “'+g('c-msg')+'”.';
+  d.push(obj);
+  d.push('');
+  d.push('**ENTREGÁVEL E PRONTO QUANDO**');
+  d.push('Materiais: '+x.mats.filter(function(m){return m.nome!=='Estudo da melhoria';}).map(function(m){return m.nome;}).join('; ')+'. Canais: '+descCanais(s)+'.');
+  d.push('Pronto quando: os materiais estiverem revisados e aprovados por '+aprov+'; a comunicação estiver publicada em '+pub+'; links, segmentação e datas estiverem conferidos.');
+  d.push('');
+  d.push('**CONTEXTO E MATERIAIS**');
+  d.push('Campanha de porte '+s.porte.toLowerCase()+' ('+s.soma+' de 12 pontos), com prazo estimado de '+rng(x.p.total)+' dias úteis depois que documentação e segmentação chegarem. Documentação de produto: '+x.docTxt+'. Segmentação: '+(x.segNec?x.segTxt:'não se aplica')+'. Entrada em produção: '+x.prodTxt+'. Responsável em Produto: '+resp+'.'+(g('c-obs')?' Observações: '+fimFrase(g('c-obs')):''));
+  if(links)d.push('Links: '+links);
+  /* checklist */
+  var ck=[];
+  var add=function(k,t){ck.push({k:k,t:t});};
+  if(!x.dt('c-prod')||!x.ped)add('datas','Confirmar com Produto as datas de entrada em produção e de comunicação');
+  if($('c-doc').value==='espera')add('doc','Receber a documentação de produto ('+x.docTxt+')');
+  if(x.segNec&&$('c-seg').value==='espera')add('seg','Receber a lista de segmentação ('+x.segTxt+')');
+  if(s.estudo)add('estudo','Estudar a melhoria no ambiente de teste');
+  var cp=[];if(q.beamer)cp.push('Beamer');var ne=q.emailGeral+q.emailSeg+q.emailNps;if(ne>0)cp.push(ne>1?'e-mails':'e-mail');if(q.whats)cp.push('Comunidade Obra Prima');if(q.zap)cp.push('WhatsApp');
+  add('copy','Escrever as copies ('+(cp.length?cp.join(', '):'comunicado')+')');
+  if(s.artigos)add('art','Escrever '+plur(s.artigos,'artigo','artigos'));
+  if(q.playbook)add('playbook','Produzir o playbook de utilização para o CS');
+  if(s.temVideo)add('video','Gravar o vídeo e enviar ao Design para edição');
+  var dp=[];if(s.criativo)dp.push('criativo para '+critDest(s));if(q.social)dp.push('peças de redes sociais');
+  if(dp.length)add('design','Briefar o Design: '+dp.join(' e '));
+  if(s.deps.some(function(d2){return d2.id==='cxTreino';}))add('cx','Alinhar o treinamento do CS com CX');
+  var merge=function(k1,k2,t){var i1=-1,i2=-1;ck.forEach(function(c,i){if(c.k===k1)i1=i;if(c.k===k2)i2=i;});if(i1>=0&&i2>=0){ck[i1]={k:k1,t:t};ck.splice(i2,1);return true;}return false;};
+  var extra=2;/* itens finais: revisar e publicar */
+  if(ck.length+extra>8)merge('doc','seg','Receber a documentação e a segmentação');
+  if(ck.length+extra>8)merge('copy','art','Escrever as copies e os artigos');
+  if(ck.length+extra>8)merge('playbook','cx','Produzir o playbook do CS e alinhar o treinamento com CX');
+  if(ck.length+extra>8)merge('design','cx','Briefar o Design e alinhar o treinamento com CX');
+  if(ck.length+extra>8)merge('video','design','Gravar o vídeo e briefar o Design');
+  var lista=ck.map(function(c){return c.t;});
+  if(lista.length+extra<5)lista.splice(0,0,'Confirmar público e canais com '+(g('c-resp')||'Produto'));
+  if(lista.length+extra<5)lista.push('Conferir textos, links e imagens');
+  lista.push('Revisar e aprovar os materiais com '+(g('c-aprov')||'o aprovador'));
+  lista.push('Programar e publicar nos canais ('+(x.ped?x.comTxt:'data a definir')+')');
+  var abertos=[];
+  if(x.falta.length)abertos.push('Falta definir: '+x.falta.join(', ')+'.');
+  if(!x.ped)abertos.push('A Data de Entrega do card está estimada. Falta confirmar a data da comunicação aos clientes.');
+  if(!g('c-links'))abertos.push('Links de apoio (documentação, protótipo, ambiente de teste) não informados.');
+  if(!abertos.length)abertos.push('Nenhum ponto em aberto.');
+  cards.push({nome:'Card principal',titulo:s.nome?($('c-frente').value+' | '+s.nome):($('c-frente').value+' | [nome da campanha]'),etiqueta:etiqueta,data:data,descricao:d.join('\n'),checklist:lista,abertos:abertos});
+  /* ---- card do Design */
+  var partes=[];
+  if(s.criativo)partes.push('criativo para '+critDest(s));
+  if(s.temVideo)partes.push('edição do vídeo');
+  if(q.social)partes.push('peças para redes sociais');
+  if(partes.length){
+    var d2=[];
+    d2.push('**O QUE FAZER**');
+    d2.push('Produzir '+partes.join(', ')+' da campanha “'+nomeTxt+'”.');
+    d2.push('');
+    d2.push('**OBJETIVO**');
+    d2.push('Ter os materiais visuais prontos a tempo da comunicação em '+pub+', a partir dos textos e do briefing enviados por Marketing de Produto.');
+    d2.push('');
+    d2.push('**ENTREGÁVEL E PRONTO QUANDO**');
+    d2.push('Arquivos finais de: '+partes.join(', ')+', nos formatos de cada canal.');
+    d2.push('Pronto quando: os materiais estiverem aprovados por Marketing de Produto; os arquivos estiverem entregues nos formatos de cada canal.');
+    d2.push('');
+    d2.push('**CONTEXTO E MATERIAIS**');
+    d2.push('Campanha “'+nomeTxt+'” (porte '+s.porte.toLowerCase()+').'+(g('c-msg')?' Mensagem principal: “'+g('c-msg')+'”.':'')+' Os textos dos criativos e o vídeo bruto vêm de Marketing de Produto.');
+    if(links)d2.push('Links: '+links);
+    var ck2=['Receber o briefing, os textos e o vídeo bruto de Marketing de Produto','Produzir a primeira versão ('+partes.join(', ')+')','Enviar para aprovação de Marketing de Produto','Ajustar conforme o retorno','Entregar os arquivos finais nos formatos de cada canal'];
+    cards.push({nome:'Card do Design',titulo:'Design | '+nomeTxt+' ('+partes.join(', ')+')',etiqueta:'[a definir]',data:'[a definir] (combinar com o Design: criativo leva '+rng(P.criativo)+' dias e edição de vídeo '+rng(P.edicao)+' dias; comunicação em '+pub+')',descricao:d2.join('\n'),checklist:ck2,abertos:['Escolher o membro do card: João (criativos e vídeo) ou Karen (redes sociais).','Data de Entrega do Design a combinar com quem for produzir.']});
+  }
+  return cards;
+}
+function trelloUI(cards){
+  trelloParts=[];var all=[];
+  var sec=function(l,i,inner){return '<div class="ts"><div class="th"><span>'+l+'</span><button type="button" class="btn ghost small" data-cp="'+i+'">Copiar</button></div>'+inner+'</div>';};
+  var html=cards.map(function(cd){
+    var i0=trelloParts.length;
+    trelloParts.push(cd.titulo);
+    trelloParts.push('Etiqueta: '+cd.etiqueta+'\nData de Entrega: '+cd.data);
+    trelloParts.push(cd.descricao);
+    trelloParts.push(cd.checklist.join('\n'));
+    all.push(cd.nome.toUpperCase()+'\n\nTítulo:\n'+cd.titulo+'\n\n'+trelloParts[i0+1]+'\n\nDescrição:\n'+cd.descricao+'\n\nChecklist:\n'+trelloParts[i0+3]+'\n\nPontos em aberto:\n'+cd.abertos.map(function(a){return '- '+a;}).join('\n'));
+    return '<div class="tc"><h4>'+esc(cd.nome)+'</h4>'
+      +sec('Título',i0,'<p class="tv">'+esc(cd.titulo)+'</p>')
+      +sec('Etiqueta e Data de Entrega',i0+1,'<p class="tv">'+esc(trelloParts[i0+1])+'</p>')
+      +sec('Descrição',i0+2,'<pre class="tv code">'+esc(cd.descricao)+'</pre>')
+      +sec('Checklist',i0+3,'<pre class="tv code">'+esc(trelloParts[i0+3])+'</pre>')
+      +'<div class="ts"><div class="th"><span>Pontos em aberto</span></div><ul>'+cd.abertos.map(function(a){return '<li>'+esc(a)+'</li>';}).join('')+'</ul></div></div>';
+  }).join('');
+  trelloAll=all.join('\n\n----------\n\n');
+  return html;
+}
+function contextoTxt(x){
+  var s=x.s,g=x.g,L=[];
+  var ordem=function(m){var t=m.nome.toLowerCase();return /artigo/.test(t)?1:/e-mail/.test(t)?2:/beamer/.test(t)?3:/comunidade|post/.test(t)?4:/disparo/.test(t)?5:/criativo/.test(t)?6:/redes/.test(t)?7:/playbook/.test(t)?8:/v[ií]deo/.test(t)?9:/treinamento/.test(t)?10:11;};
+  var lista=x.mats.filter(function(m){return m.nome!=='Estudo da melhoria'&&m.nome!=='Copy da comunicação';}).sort(function(a,b){return ordem(a)-ordem(b);});
+  var aj=function(v,r){return v||('[AJUSTAR: '+r+']');};
+  L.push('CONTEXTO DA CAMPANHA PARA PRODUÇÃO DE CONTEÚDO');
+  L.push('');
+  L.push('Empresa: Obra Prima, software de gestão de obras para pequenas e médias construtoras.');
+  L.push('Campanha: '+aj(s.nome,'nome'));
+  L.push('O que muda: '+aj(g('c-desc'),'descrição da novidade'));
+  L.push('Mensagem principal: '+aj(g('c-msg'),'mensagem principal'));
+  L.push('Público: '+CFG.abr[s.abr-1].nome+' (campanha '+s.porte.toLowerCase()+', '+s.soma+' de 12 pontos)');
+  L.push('Segmentação: '+(x.segNec?x.segTxt:'não se aplica'));
+  L.push('Datas: entrada em produção '+x.prodTxt+'; comunicação aos clientes '+x.comTxt+'; entrega prevista do Marketing '+x.entrega);
+  L.push('');
+  L.push('MATERIAIS A PRODUZIR (ordem sugerida)');
+  lista.forEach(function(m,i){L.push((i+1)+'. '+m.nome+' | '+m.quem);});
+  if(s.estudo)L.push('Antes de escrever: estudar a melhoria no sistema.');
+  L.push('');
+  L.push('SITUAÇÃO');
+  L.push('- Documentação de produto: '+(x.docTxt==='já recebida'?'já recebida':'ainda não chegou, prevista para '+x.docTxt));
+  var falta=x.falta.slice();
+  if(falta.length)L.push('- Falta confirmar: '+falta.join(', '));
+  if(g('c-links'))L.push('- Links: '+g('c-links').replace(/\s*\n\s*/g,', '));
+  if(g('c-obs'))L.push('- Observações: '+g('c-obs').replace(/\s*\n\s*/g,' '));
+  if(g('c-resp')||g('c-aprov'))L.push('- Produto: responsável '+(g('c-resp')||'a definir')+'; aprova a comunicação '+(g('c-aprov')||'a definir'));
+  L.push('');
+  L.push('COMO QUERO TRABALHAR');
+  L.push('- Comece por: '+(lista[0]?lista[0].nome:'o primeiro material')+'. Entregue um material por vez e me pergunte só o que for indispensável.');
+  L.push('- O que não estiver acima fica marcado como [AJUSTAR], sem inventar dados, datas ou links.');
+  L.push('- Use os padrões e as skills de marca do Obra Prima para cada canal (Central de Ajuda, e-mail, Beamer, comunidade, criativos e roteiro de vídeo).');
+  return L.join('\n');
+}
+function renderCamp(){
+  var s=readCamp(),p=calcPrazo(s);
+  $('t-canais').textContent='Nota '+s.nCanais+' · '+s.pts+' '+(s.pts===1?'ponto':'pontos');
+  $('t-esforco').textContent='Nota '+s.nEsf;
+  $('t-abr').textContent='Nota '+s.abr;
+  $('t-deps').textContent='Nota '+s.nDeps+' · '+s.deps.length+' '+(s.deps.length===1?'equipe':'equipes');
+  $('vf-w').hidden=!s.temVideo;
+  $('c-docw').hidden=$('c-doc').value!=='espera';
+  $('c-segw').hidden=$('c-seg').value!=='espera';
+  var sol=parseD($('c-solic').value)||new Date();
+  var docD=parseD($('c-docate').value),segD=parseD($('c-segate').value);
+  var docW=0,segW=0;
+  if($('c-doc').value==='espera')docW=docD?Math.max(0,bdDiff(sol,docD)):Math.max(0,+$('c-docdias').value||0);
+  if($('c-seg').value==='espera')segW=segD?Math.max(0,bdDiff(sol,segD)):Math.max(0,+$('c-segdias').value||0);
+  $('c-docdias').disabled=!!docD;$('c-segdias').disabled=!!segD;
+  var wait=Math.max(docW,segW);
+  var start=addBD(sol,wait);
+  var e1=addBD(start,p.total[0]),e2=addBD(start,p.total[1]);
+  var ped=parseD($('c-pedida').value);
+  var idx=CFG.faixasPorte.map(function(f){return f.nome;}).indexOf(s.porte)+1;
+  var al='',pend=[];
+  if(s.pts===0)al+='<div class="al warn">Nenhum canal marcado. Marque onde a campanha será publicada.</div>';
+  if(docW>CFG.prazos.docMax)al+='<div class="al warn"><b>Documentação acima do combinado.</b> O acordo é de até '+dias(CFG.prazos.docMax)+' após a solicitação. Você informou '+dias(docW)+'.</div>';
+  var precisaSeg=s.abr>=2||s.q.emailSeg>0||s.q.emailNps>0;
+  if(precisaSeg&&$('c-seg').value==='nao')al+='<div class="al warn"><b>Público segmentado.</b> Confirme quem entrega a lista de destinatários.</div>';
+  var designSug=s.q.youtube>0||s.q.miniVideos>0||s.criativo||s.q.social>0;
+  if(designSug&&!c('d-design'))al+='<div class="al warn"><b>Design não marcado.</b> Vídeo, criativo e redes sociais precisam do designer. Se ele participa, marque em Dependências.</div>';
+  if((s.q.crCS>0||s.q.playbook>0)&&!c('d-cxTreino'))al+='<div class="al warn"><b>CX não marcado.</b> Criativo para CS e playbook vão para o CS, então a equipe de treinamento e qualidade costuma participar. Se ela participa, marque em Dependências.</div>';
+  if(s.q.emailNps>0&&!c('d-cxDados'))al+='<div class="al warn"><b>Segmentação de NPS.</b> O e-mail de NPS precisa da lista de promotores, neutros ou detratores. Se CX entrega a lista, marque CX (dados) em Dependências.</div>';
+  var prodD=parseD($('c-prod').value);
+  if(ped&&prodD&&ped<prodD)al+='<div class="al warn"><b>Comunicação antes da entrada em produção.</b> Confirme se o cliente pode ser avisado antes de a funcionalidade existir.</div>';
+  if($('c-doc').value==='espera')pend.push('documentação de produto (chega em '+dias(docW)+')');
+  if($('c-seg').value==='espera')pend.push('segmentação (chega em '+dias(segW)+')');
+  var status='',statusTxt='';
+  if(ped){
+    var avail=bdDiff(start,ped);
+    if(ped<start){status='bad';statusTxt='<b>Não cabe.</b> A data da comunicação é anterior ao início do relógio ('+fmt(start)+').';}
+    else if(avail>=p.total[1]){status='ok';statusTxt='<b>Cabe com folga.</b> Há '+dias(avail)+' até a comunicação e o cenário completo pede '+dias(p.total[1])+'.';}
+    else if(avail>=p.total[0]){status='warn';statusTxt='<b>Apertado.</b> Há '+dias(avail)+' até a comunicação. O cenário completo pede '+dias(p.total[1])+', então a folga fica reduzida.';}
+    else{status='bad';statusTxt='<b>Não cabe.</b> Há '+dias(avail)+' até a comunicação e o mínimo é '+dias(p.total[0])+'. Faltam '+dias(p.total[0]-avail)+': reduza o escopo ou renegocie a data.';}
+  }
+  var statusSel=$('c-status').value;
+  $('c-real-w').hidden=statusSel!=='publicada';
+  var realD=statusSel==='publicada'?parseD($('c-real').value):null;
+  var diasReais=(realD&&realD>=start)?bdDiff(start,realD):null;
+  var realHtml=realD?'<div><span>Publicada em:</span> '+fmt(realD)+(diasReais!==null?' ('+dias(diasReais)+' de trabalho, previsto '+rng(p.total)+')':'')+'</div>':'';
+  var parts='';
+  if(p.estudo[1]>0)parts+='<li><span>Estudo da melhoria</span><b>'+rng2(p.estudo)+'</b></li>';
+  parts+='<li><span>Produção <small>(trilha crítica: '+p.crit+')</small></span><b>'+rng2(p.prod)+'</b></li>';
+  if(p.rev[1]>0)parts+='<li><span>Revisão e aprovação</span><b>'+rng2(p.rev)+'</b></li>';
+  parts+='<li><span>Folga para imprevistos</span><b>'+rng2(p.folga)+'</b></li>';
+  var html=
+    '<div class="porte"><div><div class="nm">'+s.porte+'</div><div class="pts">'+s.soma+' de 12 pontos</div></div><span class="dots" role="img" aria-label="Porte '+idx+' de 3">'+[1,2,3].map(function(i){return '<i class="'+(i<=idx?'on':'')+'"></i>';}).join('')+'</span></div>'
+    +'<div class="bd">'
+    +'<div><b>Canais</b><span class="n">'+s.nCanais+'/3</span><small>'+esc(descCanais(s))+'</small></div>'
+    +'<div><b>Esforço de produção</b><span class="n">'+s.nEsf+'/3</span><small>'+esc(descEsforco(s))+'</small></div>'
+    +'<div><b>Abrangência</b><span class="n">'+s.abr+'/3</span><small>'+esc(CFG.abr[s.abr-1].nome)+'</small></div>'
+    +'<div><b>Dependências</b><span class="n">'+s.nDeps+'/3</span><small>'+(s.deps.length?esc(s.deps.map(function(d){return d.nome;}).join(', ')):'só Marketing de Produto')+'</small></div>'
+    +'</div>';
+  var html2=
+    '<h3>Prazo</h3><div class="prazo"><span class="big">'+rng2(p.total)+'</span><span>dias úteis</span></div>'
+    +'<ul class="parts">'+parts+'</ul>'
+    +'<p class="hint" style="margin:8px 0 0">Referência do porte '+s.porte.toLowerCase()+': '+rng(p.ref)+' dias úteis.</p>'
+    +'<div class="datas"><div><span>Início do relógio:</span> '+fmt(start)+(wait?' (espera de '+dias(wait)+')':'')+'</div>'
+    +'<div><span>Entrega prevista:</span> '+(e1.getTime()===e2.getTime()?fmt(e1):fmt(e1)+' a '+fmt(e2))+'</div>'
+    +(ped?'<div><span>Comunicação aos clientes:</span> '+fmt(ped)+'</div>':'')+realHtml+'</div>'
+    +(status?'<div class="al '+status+'">'+statusTxt+'</div>':'')
+    +al
+    +'<div class="btns"><button type="button" class="btn" id="btn-resumo">Copiar resumo</button><button type="button" class="btn ghost" id="btn-salvar">Salvar agora</button></div>';
+  $('res').innerHTML=html+html2;
+  $('mini').innerHTML='<b>'+s.porte+'</b><span>'+s.soma+'/12 · '+rng2(p.total)+' dias úteis</span>';
+
+  var g=function(id){return $(id).value.trim();};
+  var dt=function(id){var d=parseD($(id).value);return d?fmt(d):null;};
+  var segNec=$('c-seg').value!=='nao';
+  var entrega=e1.getTime()===e2.getTime()?fmt(e1):fmt(e1)+' a '+fmt(e2);
+  var docTxt=$('c-doc').value==='pronta'?'já recebida':fmt(docD||addBD(sol,docW));
+  var segTxt=$('c-seg').value==='pronta'?'já pronta':fmt(segD||addBD(sol,segW));
+  var comTxt=ped?fmt(ped):'a confirmar';
+  var prodTxt=dt('c-prod')||'a confirmar';
+  var mats=materiais(s);
+  $('mat-t').innerHTML='<tr><th>Material</th><th>Quem produz</th><th>Prazo</th></tr>'+mats.map(function(m){return '<tr><td class="k" style="white-space:normal">'+esc(m.nome)+'</td><td>'+esc(m.quem)+'</td><td>'+esc(m.prazo)+'</td></tr>';}).join('');
+  var falta=[];
+  if(!s.nome)falta.push('nome da campanha');
+  if(!g('c-desc'))falta.push('descrição do que muda');
+  if(!g('c-resp'))falta.push('responsável em Produto');
+  if(!g('c-aprov'))falta.push('quem aprova a comunicação');
+  if(!dt('c-prod'))falta.push('entrada em produção');
+  if(!ped)falta.push('data da comunicação aos clientes');
+  $('pend').innerHTML=falta.length?'<div class="al warn"><b>Falta fechar para enviar a Produto:</b> '+esc(falta.join(', '))+'.</div>':'<div class="al ok"><b>Tudo preenchido.</b> A mensagem para Produto está pronta para enviar.</div>';
+  var stTxt=statusTxt.replace(/<[^>]+>/g,'');
+  var L=[];
+  L.push('CAMPANHA: '+(s.nome||'Sem nome'));
+  L.push('Porte: '+s.porte+' ('+s.soma+' de 12 pontos)');
+  if(g('c-desc'))L.push('O que muda: '+g('c-desc'));
+  if(g('c-msg'))L.push('Mensagem principal: '+g('c-msg'));
+  L.push('Público: '+CFG.abr[s.abr-1].nome);
+  L.push('');
+  L.push('MATERIAIS A PRODUZIR');
+  mats.forEach(function(m){L.push('- '+m.nome+' | '+m.quem+' | '+m.prazo);});
+  L.push('');
+  L.push('PONTUAÇÃO');
+  L.push('- Canais: nota '+s.nCanais+' ('+s.pts+' '+(s.pts===1?'ponto':'pontos')+'): '+descCanais(s));
+  L.push('- Esforço de produção: nota '+s.nEsf+': '+descEsforco(s));
+  L.push('- Abrangência: nota '+s.abr+': '+CFG.abr[s.abr-1].nome);
+  L.push('- Dependências: nota '+s.nDeps+': '+(s.deps.length?s.deps.map(function(d){return d.nome;}).join(', '):'só Marketing de Produto'));
+  L.push('');
+  L.push('PRAZO E DATAS');
+  L.push('Prazo: '+rng(p.total)+' dias úteis (produção '+rng(p.prod)+(p.estudo[1]?', estudo '+rng(p.estudo):'')+(p.rev[1]?', revisão '+rng(p.rev):'')+', folga '+rng(p.folga)+'). Referência do porte: '+rng(p.ref)+'.');
+  L.push('Início do relógio: '+fmt(start)+(wait?' (espera de '+dias(wait)+')':''));
+  L.push('Entrega prevista: '+entrega);
+  L.push('Entrada em produção: '+prodTxt);
+  L.push('Comunicação aos clientes: '+comTxt+(ped?' ('+stTxt+')':''));
+  if(pend.length)L.push('Pré-requisitos pendentes: '+pend.join('; '));
+  if(g('c-resp')||g('c-aprov'))L.push('Produto: responsável '+(g('c-resp')||'a definir')+'; aprova a comunicação '+(g('c-aprov')||'a definir'));
+  if(g('c-links'))L.push('Links: '+g('c-links'));
+  if(g('c-obs'))L.push('Observações: '+g('c-obs'));
+  lastResumo=L.join('\n');
+  var M=[];
+  M.push('Oi, time de Produto! Segue o resumo da campanha'+(s.nome?' "'+s.nome+'"':'')+'.');
+  M.push('');
+  M.push('O QUE VAMOS COMUNICAR');
+  M.push(g('c-desc')||'(a preencher)');
+  if(g('c-msg'))M.push('Mensagem principal: '+g('c-msg'));
+  M.push('');
+  M.push('CANAIS E MATERIAIS');
+  mats.forEach(function(m){M.push('- '+m.nome);});
+  M.push('');
+  M.push('DATAS');
+  M.push('- Documentação de produto: '+docTxt);
+  if(segNec)M.push('- Segmentação: '+segTxt);
+  M.push('- Entrada em produção: '+prodTxt);
+  M.push('- Comunicação aos clientes: '+comTxt);
+  M.push('- Entrega prevista do Marketing: '+entrega);
+  M.push('');
+  M.push('O QUE PRECISAMOS DE PRODUTO');
+  M.push('- Documentação completa (combinado: até '+dias(CFG.prazos.docMax)+' após a solicitação)');
+  if(segNec)M.push('- Lista de segmentação, com o critério do público ('+CFG.abr[s.abr-1].nome.toLowerCase()+')');
+  M.push('- Validação da mensagem'+(g('c-aprov')?' com '+g('c-aprov'):'')+' antes do envio');
+  M.push('- Aviso imediato se o escopo ou a data mudarem');
+  if(g('c-links')){M.push('');M.push('LINKS');M.push(g('c-links'));}
+  if(g('c-obs')){M.push('');M.push('OBSERVAÇÕES');M.push(g('c-obs'));}
+  M.push('');
+  M.push('O prazo de produção é de '+rng(p.total)+' dias úteis a partir do recebimento da documentação'+(segNec?' e da segmentação':'')+'.');
+  lastProduto=M.join('\n');
+  var ctx={s:s,p:p,mats:mats,g:g,dt:dt,ped:ped,entrega:entrega,docTxt:docTxt,segTxt:segTxt,comTxt:comTxt,prodTxt:prodTxt,segNec:segNec,dateStatus:status,falta:falta,pend:pend};
+  $('trello-box').innerHTML=trelloUI(trelloCards(ctx));
+  lastContexto=contextoTxt(ctx);
+  var showT=sumSel==='trello';
+  $('trello-box').hidden=!showT;$('sum-pre').hidden=showT;
+  $('sum-pre').textContent=sumSel==='contexto'?lastContexto:(sumSel==='produto'?lastProduto:lastResumo);
+  var lbls={interno:'Copiar resumo interno',produto:'Copiar mensagem para Produto',trello:'Copiar todos os cards',contexto:'Copiar contexto para o Claude'};
+  var bc=$('btn-sumcopy');if(!bc.dataset.busy)bc.textContent=lbls[sumSel];
+  Array.prototype.forEach.call($('sum-seg').querySelectorAll('button'),function(x){x.setAttribute('aria-pressed',x.dataset.s===sumSel?'true':'false');});
+  lastSave={nome:s.nome||'Sem nome',modo:'Campanha',titulo:s.porte+' · '+s.soma+'/12',prazo:rng(p.total)+' dias úteis',entrega:entrega,resumo:lastResumo,
+    porte:s.porte,soma:s.soma,status:statusSel,comunicacao:$('c-pedida').value,publicacaoReal:realD?$('c-real').value:'',prevLo:p.total[0],prevHi:p.total[1],diasReais:diasReais};
+  if(briefAuto)briefSel=s.porte;
+  renderBrief();
+}
+
+/* ---------- projeto ---------- */
+function renderProj(){
+  var k=n('p-sprints'),d=CFG.prazos.sprint*k;
+  var ini=parseD($('p-inicio').value)||new Date();
+  var fim=addBD(ini,d);
+  var nome=$('p-nome').value.trim()||'Sem nome';
+  $('res').innerHTML=
+    '<div class="porte"><div><div class="nm">Projeto</div><div class="pts">Fora da pontuação de porte</div></div></div>'
+    +'<h3>Prazo</h3><div class="prazo"><span class="big">'+d+'</span><span>dias úteis</span></div>'
+    +'<p class="hint" style="margin:8px 0 0">'+k+' '+(k===1?'sprint':'sprints')+' de '+CFG.prazos.sprint+' dias úteis. Chega a um MVP, não à versão final.</p>'
+    +'<div class="datas"><div><span>Início:</span> '+fmt(ini)+'</div><div><span>MVP previsto:</span> '+fmt(fim)+'</div></div>'
+    +'<div class="al info">Antes de começar, preencha os quatro campos: objetivo do MVP, quem participa, critério de aprovação e prazo negociado.</div>'
+    +'<div class="btns"><button type="button" class="btn" id="btn-resumo">Copiar resumo</button><button type="button" class="btn ghost" id="btn-salvar">Salvar agora</button></div>';
+  $('mini').innerHTML='<b>Projeto</b><span>'+d+' dias úteis · MVP em '+fmt(fim)+'</span>';
+  var L=['PROJETO: '+nome,'Prazo: '+k+' '+(k===1?'sprint':'sprints')+' ('+d+' dias úteis), MVP previsto para '+fmt(fim),
+    'Objetivo e MVP: '+($('p-obj').value.trim()||'a definir'),
+    'Quem participa e o que entrega: '+($('p-quem').value.trim()||'a definir'),
+    'Critério de aprovação do MVP: '+($('p-crit').value.trim()||'a definir'),
+    'Prazo negociado: '+($('p-prazo').value.trim()||'a definir')];
+  lastResumo=L.join('\n');
+  lastSave={nome:nome,modo:'Projeto',titulo:k+' '+(k===1?'sprint':'sprints'),prazo:d+' dias úteis',entrega:'MVP em '+fmt(fim),resumo:lastResumo,porte:'Projeto'};
+}
+
+/* ---------- urgência ---------- */
+function renderUrg(){
+  var base=$('u-base').checked;
+  var nome=$('u-nome').value.trim()||'Sem descrição';
+  var prazo=base?'Mínimo de 1 dia útil':'15 a 30 minutos';
+  $('res').innerHTML=
+    '<div class="porte"><div><div class="nm">Urgência</div><div class="pts">Sem porte e sem folga</div></div></div>'
+    +'<h3>Prazo</h3><div class="prazo"><span class="big">'+(base?'1':'15–30')+'</span><span>'+(base?'dia útil':'minutos')+'</span></div>'
+    +'<div class="al warn"><b>Avise na hora pelo WhatsApp.</b> Marketing e gestão negociam o prazo em conjunto.</div>'
+    +'<div class="al info">'+(base?'O dia serve para criar com calma e disparar para a base da melhor forma.':'Anúncio no sistema ou e-mail de urgência sobe rápido.')+'</div>'
+    +'<div class="btns"><button type="button" class="btn" id="btn-resumo">Copiar resumo</button><button type="button" class="btn ghost" id="btn-salvar">Salvar agora</button></div>';
+  $('mini').innerHTML='<b>Urgência</b><span>'+prazo+'</span>';
+  lastResumo='URGÊNCIA: '+nome+'\nTipo: '+(base?'e-mail para a base':'anúncio no sistema ou e-mail de urgência')+'\nPrazo: '+prazo+'\nAvisar na hora pelo WhatsApp para negociar em conjunto com a gestão.';
+  lastSave={nome:nome,modo:'Urgência',titulo:base?'E-mail para a base':'Anúncio no sistema',prazo:prazo,entrega:'',resumo:lastResumo,porte:'Urgência'};
+}
+
+/* ---------- briefing ---------- */
+function briefFields(p){
+  var o=BRIEF['Pequena'].slice();
+  if(p==='Média'||p==='Grande')o=o.concat(BRIEF['Média']);
+  if(p==='Grande')o=o.concat(BRIEF['Grande']);
+  return o;
+}
+function renderBrief(){
+  var f=briefFields(briefSel);
+  Array.prototype.forEach.call($('brief-seg').querySelectorAll('button'),function(b){b.setAttribute('aria-pressed',b.dataset.b===briefSel?'true':'false');});
+  $('brief-hint').textContent=(briefSel==='Pequena'?'Modelo curto para comunicados rápidos.':briefSel==='Média'?'Inclui os campos do modelo pequeno.':'Inclui os campos dos modelos pequeno e médio. Deve chegar antes da entrada em produção.')+' O prazo só começa a contar com o briefing e a documentação em mãos.';
+  $('brief-t').innerHTML='<tr><th>Campo</th><th>O que Produto informa</th></tr>'+f.map(function(r){return '<tr><td class="k">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td></tr>';}).join('');
+  $('btn-auto').hidden=briefAuto||mode!=='campanha';
+}
+
+/* ---------- armazenamento ---------- */
+function hhmm(iso){return new Date(iso).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+function dthm(iso){return new Date(iso).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
+function setStatus(t,cls){var m=$('store-msg');m.textContent=t;m.className=cls||'';}
+function setStatusHTML(h,cls){var m=$('store-msg');m.innerHTML=h;m.className=cls||'';}
+function findItem(id){return saved.filter(function(x){return x.id===id;})[0];}
+function upsert(it){var i=saved.findIndex(function(x){return x.id===it.id;});if(i>=0)saved[i]=it;else saved.unshift(it);saved.sort(function(a,b){return String(b.updatedAt).localeCompare(String(a.updatedAt));});}
+function setHash(id){try{history.replaceState(null,'',id?'#c='+id:location.pathname+location.search);}catch(e){}}
+function api(method,id,body){
+  var h={'Content-Type':'application/json'},pw=lsGet(PKEY);if(pw)h['x-app-password']=pw;
+  return fetch('/api/campanhas'+(id?'?id='+encodeURIComponent(id):''),{method:method,headers:h,body:body?JSON.stringify(body):undefined})
+    .then(function(r){return r.json().catch(function(){return {};}).then(function(j){return {status:r.status,data:j};});});
+}
+function localLoad(){try{return JSON.parse(lsGet(LKEY)||'[]');}catch(e){return [];}}
+function localPut(){lsSet(LKEY,JSON.stringify(saved));}
+function needPassword(){storeMode='auth';$('gate').hidden=false;$('pw-err').hidden=!pwTried;setStatus('Aguardando a senha da equipe.','warn');renderSaved();}
+function goLocal(msg){storeMode='local';saved=localLoad();setStatus(msg||'Modo local: as campanhas ficam salvas só neste navegador.','warn');afterLoad();}
+function afterLoad(){$('gate').hidden=true;renderSaved();openFromHash();if(storeMode==='server'){setStatus(protectedApp?'Salvamento compartilhado ativo.':'Salvamento compartilhado ativo, mas sem senha: qualquer pessoa com o link pode ver e editar.',protectedApp?'ok':'warn');}}
+function initStore(){
+  return api('GET').then(function(r){
+    if(r.status===200){storeMode='server';protectedApp=!!r.data.protected;saved=r.data.items||[];afterLoad();}
+    else if(r.status===401){needPassword();}
+    else goLocal(r.status===503?'O banco de dados ainda não foi configurado no Vercel. Salvando só neste navegador.':'');
+  },function(){goLocal('');});
+}
+function refresh(){
+  if(storeMode!=='server')return;
+  api('GET').then(function(r){if(r.status===200){saved=r.data.items||[];renderSaved();}else if(r.status===401){needPassword();}},function(){});
+}
+function renderSaved(){if(mode==='historico')renderHist();}
+function tipoDe(it){return it.k==='campanha'?(it.porte||'Campanha'):(it.k==='projeto'?'Projeto':'Urgência');}
+function histFiltrados(){
+  var q=$('h-q').value.trim().toLowerCase(),st=$('h-st').value,pt=$('h-pt').value,arq=$('h-arq').checked;
+  return saved.filter(function(it){
+    if(!arq&&it.arquivada)return false;
+    if(q&&String(it.nome).toLowerCase().indexOf(q)<0)return false;
+    if(st&&(it.status||'planejamento')!==st)return false;
+    if(pt&&tipoDe(it)!==pt)return false;
+    return true;
+  });
+}
+function media(a){return a.length?Math.round(a.reduce(function(x,y){return x+y;},0)/a.length*10)/10:null;}
+function renderHist(){
+  if(storeMode==='pending'){$('h-stats').innerHTML='';$('h-t').innerHTML='<tr><td>Carregando...</td></tr>';$('h-log').innerHTML='';return;}
+  if(storeMode==='auth'){$('h-stats').innerHTML='';$('h-t').innerHTML='<tr><td>Digite a senha da equipe para ver o histórico.</td></tr>';$('h-log').innerHTML='';return;}
+  var ativos=saved.filter(function(x){return !x.arquivada;});
+  var camp=ativos.filter(function(x){return x.k==='campanha';});
+  var pubs=camp.filter(function(x){return x.status==='publicada'&&x.diasReais!=null&&x.prevHi!=null;});
+  var mr=media(pubs.map(function(x){return x.diasReais;})),mp=media(pubs.map(function(x){return x.prevHi;}));
+  var tiles=[[ativos.length,'itens no histórico'],[camp.filter(function(x){return x.status==='publicada';}).length,'campanhas publicadas'],[camp.filter(function(x){return x.status==='producao';}).length,'em produção'],[camp.filter(function(x){return !x.status||x.status==='planejamento';}).length,'em planejamento'],[mr===null?'—':mr,mr===null?'prazo real médio (marque campanhas como publicadas)':'dias úteis reais em média, contra '+mp+' previstos']];
+  $('h-stats').innerHTML=tiles.map(function(t){return '<div class="stat"><b>'+t[0]+'</b><span>'+esc(t[1])+'</span></div>';}).join('');
+  var rows=histFiltrados();
+  var hd='<tr><th>Nome</th><th>Tipo</th><th>Status</th><th>Previsto</th><th>Real</th><th>Atualizada</th><th></th></tr>';
+  if(!rows.length){$('h-t').innerHTML=hd+'<tr><td colspan="7">Nenhum item encontrado. Preencha uma campanha com nome para ela aparecer aqui.</td></tr>';}
+  else $('h-t').innerHTML=hd+rows.map(function(it){
+    var st=it.k==='campanha'?(it.status||'planejamento'):'';
+    var acoes=(it.estado?'<button type="button" class="btn ghost small" data-act="open" data-id="'+esc(it.id)+'">Abrir</button> ':'')
+      +(storeMode==='server'?'<button type="button" class="btn ghost small" data-act="link" data-id="'+esc(it.id)+'">Copiar link</button> ':'')
+      +(it.arquivada?'<button type="button" class="btn ghost small" data-act="unarch" data-id="'+esc(it.id)+'">Restaurar</button> <button type="button" class="btn ghost small" data-act="del" data-id="'+esc(it.id)+'">Excluir de vez</button>':'<button type="button" class="btn ghost small" data-act="arch" data-id="'+esc(it.id)+'">Arquivar</button>');
+    return '<tr><td data-l="Nome"><b>'+esc(it.nome)+'</b>'+(it.arquivada?' <span class="tag">arquivada</span>':'')+(it.id===currentId?' <span class="tag">aberta</span>':'')+'<br><small>'+esc(it.autor||'')+'</small></td>'
+      +'<td data-l="Tipo">'+esc(tipoDe(it))+(it.soma!=null?' · '+it.soma+'/12':'')+'</td>'
+      +'<td data-l="Status">'+(st?'<span class="st '+st+'">'+STL[st]+'</span>':'—')+'</td>'
+      +'<td data-l="Previsto">'+esc(it.prazo||'—')+'</td>'
+      +'<td data-l="Real">'+(it.diasReais!=null?dias(it.diasReais):'—')+'</td>'
+      +'<td data-l="Atualizada">'+(it.updatedAt?dthm(it.updatedAt):'—')+'</td>'
+      +'<td>'+acoes+'</td></tr>';
+  }).join('');
+  var ev=[];
+  saved.forEach(function(it){(it.log||[]).forEach(function(e){ev.push({nome:it.nome,e:e});});});
+  ev.sort(function(a,b){return String(b.e.at).localeCompare(String(a.e.at));});
+  $('h-log').innerHTML=ev.length?ev.slice(0,25).map(function(o){return '<li><small>'+dthm(o.e.at)+'</small><span>'+esc(o.e.autor||'Alguém')+' '+esc(o.e.acao)+' <b>'+esc(o.nome)+'</b>'+(o.e.info?' · '+esc(o.e.info):'')+'</span></li>';}).join(''):'<li>Nenhuma atividade registrada ainda.</li>';
+}
+function histTSV(){
+  var cl=function(v){return String(v==null?'':v).replace(/[\t\r\n]+/g,' ');};
+  var h=['Nome','Tipo','Pontos','Status','Prazo previsto','Dias úteis reais','Comunicação','Publicada em','Atualizada em','Autor','Arquivada'];
+  var r=histFiltrados().map(function(it){return [it.nome,tipoDe(it),it.soma,it.k==='campanha'?STL[it.status||'planejamento']:'',it.prazo,it.diasReais,it.comunicacao,it.publicacaoReal,it.updatedAt?dthm(it.updatedAt):'',it.autor,it.arquivada?'sim':''].map(cl).join('\t');});
+  return [h.join('\t')].concat(r).join('\n');
+}
+function archiveItem(id,flag){
+  var it=findItem(id);if(!it)return;
+  var autor=$('autor').value.trim();
+  var aplicar=function(n){
+    upsert(n);
+    if(id===currentId&&flag){currentId=null;currentRev=0;savedSig='';conflict=null;setHash('');}
+    renderSaved();
+  };
+  if(storeMode==='server'){
+    api('PUT',id,{arquivada:flag,rev:it.rev,autor:autor}).then(function(r){
+      if(r.status===200)aplicar(r.data.item);
+      else if(r.status===409){upsert(r.data.item);renderSaved();setStatus('Outra pessoa alterou este item agora. Tente de novo.','warn');}
+      else if(r.status===401)needPassword();
+      else setStatus('Não foi possível atualizar agora.','bad');
+    },function(){setStatus('Sem conexão.','bad');});
+  }else{
+    var now=new Date().toISOString(),n=Object.assign({},it,{arquivada:flag,updatedAt:now,rev:(it.rev||0)+1});
+    n.log=pushLog(it.log,{rev:n.rev,at:now,autor:autor,acao:flag?'arquivou':'restaurou',info:''});
+    aplicar(n);localPut();
+  }
+}
+function pushLog(log,e){
+  var l=Array.isArray(log)?log.slice():[],u=l[l.length-1];
+  if(u&&e.acao==='editou'&&u.acao==='editou'&&u.autor===e.autor&&Date.parse(e.at)-Date.parse(u.at)<600000)l[l.length-1]=e;else l.push(e);
+  return l.slice(-40);
+}
+function openItem(id){
+  var op=findItem(id);if(!op||!op.estado)return false;
+  clearTimeout(saveTimer);
+  unsnap(op.k,op.estado);currentId=op.id;currentRev=op.rev||0;conflict=null;
+  setMode(op.k);savedSig=JSON.stringify(snap(mode));
+  setStatus('Aberta: '+op.nome+(op.updatedAt?' · última edição em '+dthm(op.updatedAt)+(op.autor?' por '+op.autor:''):''));
+  setHash(op.id);renderSaved();return true;
+}
+function openFromHash(){
+  var m=/#c=([\w-]+)/.exec(location.hash||'');if(!m)return;
+  if(openItem(m[1]))window.scrollTo(0,0);else setStatus('Campanha do link não encontrada. Ela pode ter sido removida.','warn');
+}
+function scheduleSave(){
+  if(storeMode!=='server'&&storeMode!=='local')return;
+  if(!lastSave)return;
+  var cur=currentId?findItem(currentId):null;
+  if(cur&&cur.k&&cur.k!==mode)return;
+  if(!cur&&(!lastSave.nome||lastSave.nome==='Sem nome'))return;
+  if(JSON.stringify(snap(mode))===savedSig)return;
+  clearTimeout(saveTimer);saveTimer=setTimeout(function(){doSave(false,false);},1200);
+  if(!conflict)setStatus('Salvando...');
+}
+function doSave(manual,force){
+  clearTimeout(saveTimer);
+  if(!lastSave||(storeMode!=='server'&&storeMode!=='local'))return Promise.resolve();
+  var est=snap(mode),sig=JSON.stringify(est);
+  if(!manual&&sig===savedSig)return Promise.resolve();
+  var item=Object.assign({},lastSave,{estado:est,k:mode,produto:mode==='campanha'?lastProduto:'',autor:$('autor').value.trim()});
+  if(storeMode==='local'){
+    var now=new Date().toISOString(),ix=currentId?saved.findIndex(function(x){return x.id===currentId;}):-1;
+    var info=[item.titulo,item.prazo].filter(Boolean).join(' · ');
+    if(ix>=0){var rv=(saved[ix].rev||0)+1;saved[ix]=Object.assign({},saved[ix],item,{updatedAt:now,rev:rv,log:pushLog(saved[ix].log,{rev:rv,at:now,autor:item.autor,acao:'editou',info:info})});currentRev=rv;}
+    else{var nw=Object.assign({},item,{id:Date.now().toString(36),rev:1,createdAt:now,updatedAt:now,log:[{rev:1,at:now,autor:item.autor,acao:'criou',info:info}]});saved.unshift(nw);currentId=nw.id;currentRev=1;}
+    saved.sort(function(a,b){return String(b.updatedAt).localeCompare(String(a.updatedAt));});
+    localPut();savedSig=sig;setStatus('Salva neste navegador às '+hhmm(now)+'.','ok');setHash(currentId);renderSaved();return Promise.resolve();
+  }
+  var p=currentId?api('PUT',currentId,Object.assign({},item,{rev:currentRev,force:!!force})):api('POST',null,item);
+  return p.then(function(r){
+    if(r.status===200||r.status===201){
+      var it=r.data.item;upsert(it);currentId=it.id;currentRev=it.rev;savedSig=sig;conflict=null;
+      setStatus('Salva às '+hhmm(it.updatedAt)+'.','ok');setHash(it.id);renderSaved();
+    }else if(r.status===409){
+      conflict=r.data.item;
+      setStatusHTML('<b>Outra pessoa alterou esta campanha</b>'+(conflict.autor?' ('+esc(conflict.autor)+')':'')+' às '+hhmm(conflict.updatedAt)+'. <button type="button" class="btn ghost small" data-act="theirs">Ver a versão dela</button> <button type="button" class="btn ghost small" data-act="mine">Salvar a minha por cima</button>','bad');
+    }else if(r.status===401){needPassword();}
+    else if(r.status===404){currentId=null;currentRev=0;setStatus('Esta campanha foi removida por outra pessoa. Use Salvar agora para criá-la de novo.','warn');refresh();}
+    else setStatus('Não foi possível salvar agora. Vamos tentar de novo na próxima edição.','bad');
+  },function(){setStatus('Sem conexão. Não foi possível salvar.','bad');});
+}
+function removeItem(id){
+  var done=function(){
+    saved=saved.filter(function(x){return x.id!==id;});
+    if(id===currentId){currentId=null;currentRev=0;savedSig='';conflict=null;setHash('');}
+    if(storeMode==='local')localPut();
+    renderSaved();
+  };
+  if(storeMode==='server')api('DELETE',id).then(function(r){if(r.status===200)done();else if(r.status===401)needPassword();else setStatus('Não foi possível remover agora.','bad');},function(){setStatus('Sem conexão. Não foi possível remover.','bad');});
+  else done();
+}
+
+/* ---------- clipboard ---------- */
+function flash(btn,t){if(!btn)return;if(!btn.dataset.busy)btn.dataset.o=btn.textContent;btn.dataset.busy='1';btn.textContent=t;clearTimeout(btn._t);btn._t=setTimeout(function(){btn.textContent=btn.dataset.o;btn.dataset.busy='';},1600);}
+function copyText(t,btn){
+  var fb=function(){$('fb-w').hidden=false;$('fb').value=t;$('fb').focus();$('fb').select();flash(btn,'Selecione e copie');};
+  try{navigator.clipboard.writeText(t).then(function(){$('fb-w').hidden=true;flash(btn,'Copiado');},fb);}catch(e){fb();}
+}
+
+/* ---------- update ---------- */
+function update(){
+  if(mode==='historico'){renderHist();return;}
+  if(mode==='campanha')renderCamp();else if(mode==='projeto')renderProj();else renderUrg();
+  scheduleSave();
+}
+function setMode(m){
+  mode=m;
+  ['campanha','projeto','urgencia','historico'].forEach(function(k){
+    $('f-'+k).hidden=k!==m;
+    $('m-'+k).setAttribute('aria-selected',k===m?'true':'false');
+  });
+  $('brief-card').hidden=m!=='campanha';
+  document.body.classList.toggle('hist',m==='historico');
+  update();
+}
+function resetAll(){
+  CFG.canais.forEach(function(k){if(k.tipo==='toggle')$('c-'+k.id).checked=false;else $('c-'+k.id).textContent='0';});
+  $('c-artigos').textContent='0';
+  $('c-estudo').checked=false;$('c-vformato').value='padrao';
+  $('abr1').checked=true;
+  CFG.deps.forEach(function(d){$('d-'+d.id).checked=false;});
+  $('c-nome').value='';$('c-pedida').value='';$('c-doc').value='pronta';$('c-seg').value='pronta';
+  $('f-campanha').querySelectorAll('textarea,input[type=text],input[type=date]').forEach(function(e){e.value='';});
+  $('c-solic').value=iso(new Date());$('c-docdias').value='2';$('c-segdias').value='3';
+  $('c-status').value='planejamento';$('c-frente').selectedIndex=0;$('c-real-w').hidden=true;
+  clearTimeout(saveTimer);currentId=null;currentRev=0;savedSig='';conflict=null;setHash('');
+  if(storeMode==='server')setStatus(protectedApp?'Salvamento compartilhado ativo.':'Salvamento compartilhado ativo, mas sem senha: qualquer pessoa com o link pode ver e editar.',protectedApp?'ok':'warn');
+  renderSaved();
+  update();
+}
+
+document.addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  if(b.dataset.step){
+    var o=$(b.dataset.step),mn=b.dataset.min?+b.dataset.min:0;
+    o.textContent=Math.min(+b.dataset.max,Math.max(mn,+o.textContent+(+b.dataset.d)));update();return;
+  }
+  if(b.dataset.mode){setMode(b.dataset.mode);return;}
+  if(b.dataset.b){briefAuto=false;briefSel=b.dataset.b;renderBrief();return;}
+  if(b.id==='btn-auto'){briefAuto=true;update();return;}
+  if(b.id==='btn-limpar'){resetAll();return;}
+  if(b.id==='btn-resumo'){copyText(lastResumo,b);return;}
+  if(b.id==='btn-brief'){
+    var f=briefFields(briefSel);
+    copyText('BRIEFING PARA PRODUTO ('+briefSel.toUpperCase()+')\nCampanha: '+(($('c-nome').value.trim())||'____')+'\n\n'+f.map(function(r){return r[0]+': ____\n   ('+r[1]+')';}).join('\n'),b);return;
+  }
+  if(b.dataset.s){sumSel=b.dataset.s;update();return;}
+  if(b.id==='btn-sumcopy'){copyText(sumSel==='produto'?lastProduto:(sumSel==='trello'?trelloAll:(sumSel==='contexto'?lastContexto:lastResumo)),b);return;}
+  if(b.dataset.cp!==undefined){copyText(trelloParts[+b.dataset.cp]||'',b);return;}
+  if(b.id==='btn-csv'){copyText(histTSV(),b);return;}
+  if(b.dataset.act==='arch'){archiveItem(b.dataset.id,true);return;}
+  if(b.dataset.act==='unarch'){archiveItem(b.dataset.id,false);return;}
+  if(b.id==='btn-salvar'){doSave(true,false).then(function(){flash(b,'Salva');});return;}
+  if(b.id==='btn-refresh'){refresh();flash(b,'Atualizada');return;}
+  if(b.id==='btn-pw'){pwTried=true;lsSet(PKEY,$('pw').value);initStore();return;}
+  if(b.dataset.act==='theirs'&&conflict){var c=conflict;upsert(c);unsnap(c.k,c.estado);currentId=c.id;currentRev=c.rev;conflict=null;setMode(c.k);savedSig=JSON.stringify(snap(mode));setStatus('Mostrando a versão mais recente, de '+(c.autor||'outra pessoa')+'.','ok');renderSaved();return;}
+  if(b.dataset.act==='mine'){doSave(true,true);return;}
+  if(b.dataset.act==='del'){
+    if(!b.dataset.arm){b.dataset.arm='1';b.dataset.o=b.textContent;b.textContent='Confirmar remoção';clearTimeout(b._t);b._t=setTimeout(function(){b.dataset.arm='';b.textContent=b.dataset.o;},3500);return;}
+    removeItem(b.dataset.id);return;
+  }
+  if(b.dataset.act==='open'){if(openItem(b.dataset.id))window.scrollTo(0,0);return;}
+  if(b.dataset.act==='link'){copyText(location.origin+location.pathname+'#c='+b.dataset.id,b);return;}
+  if(b.dataset.act==='copy'){var it=findItem(b.dataset.id);if(it)copyText(it.resumo,b);return;}
+});
+document.addEventListener('input',function(e){var i=e.target.id;if(i==='autor'){lsSet(AKEY,e.target.value);return;}if(i==='fb'||i==='pw')return;update();});
+document.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.id==='pw'){$('btn-pw').click();}});
+window.addEventListener('focus',function(){refresh();});
+window.addEventListener('hashchange',function(){if(storeMode==='server'||storeMode==='local')openFromHash();});
+document.addEventListener('change',function(e){var t=e.target;if(t.id==='fb'||t.id==='pw'||t.id==='autor')return;if(t.tagName==='TEXTAREA'||['text','number','date'].indexOf(t.type)>=0)return;update();});
+
+buildCanais();buildAbr();buildDeps();buildRules();
+$('c-solic').value=iso(new Date());$('p-inicio').value=iso(new Date());
+$('c-artigos').textContent=String(INI.artigos);
+$('autor').value=lsGet(AKEY)||'';
+renderSaved();
+setMode('campanha');
+initStore();
+})();
+</script>
+
+</body>
+</html>
