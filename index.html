@@ -134,10 +134,23 @@ details summary{cursor:pointer;font-weight:600;font-size:15px}
 .bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin:0 0 14px;font-size:13px;color:var(--muted)}
 .bar .who{display:flex;gap:8px;align-items:center}
 .bar input{width:170px;padding:5px 8px}
+.bar select{width:200px;padding:5px 8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{display:flex;gap:8px;align-items:center;border:1px solid var(--line-strong);border-radius:4px;padding:6px 10px;cursor:pointer;font-size:13.5px}
+.chip:has(input:checked){background:var(--accent-soft);border-color:var(--accent-hover)}
 #store-msg.warn{color:var(--warn)}
 #store-msg.bad{color:var(--bad)}
 #store-msg.ok{color:var(--ok)}
 #gate{margin-bottom:14px}
+body.locked .grid,body.locked .modes,body.locked .who{display:none}
+.pbar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.chk-row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line);cursor:pointer}
+.chk-row:first-of-type{border-top:0}
+.chk-row input{margin-top:3px}
+.chk-row.done .t{text-decoration:line-through;color:var(--muted)}
+.chk-row small{color:var(--muted);font-weight:300}
+.secret{font-weight:700;letter-spacing:.04em;user-select:all;background:var(--surface);padding:2px 8px;border-radius:3px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:8px}
 .stat{border:1px solid var(--line);border-radius:4px;padding:10px 12px;background:var(--surface2)}
 .stat b{display:block;font-size:24px;font-weight:700;line-height:1.1}
@@ -175,11 +188,11 @@ body.hist .grid{grid-template-columns:minmax(0,1fr)}
   .modes{display:grid;grid-template-columns:1fr 1fr;width:100%}
   .modes button{text-align:center}
   .filters{grid-template-columns:minmax(0,1fr)}
-  #brief-t tr:first-child,#mat-t tr:first-child,#h-t tr:first-child{display:none}
-  #brief-t tr,#mat-t tr,#h-t tr{display:block;border-top:1px solid var(--line);padding:8px 0}
-  #brief-t td,#mat-t td,#h-t td{display:block;border:0;padding:1px 0;white-space:normal}
+  #brief-t tr:first-child,#mat-t tr:first-child,#h-t tr:first-child,#u-t tr:first-child{display:none}
+  #brief-t tr,#mat-t tr,#h-t tr,#u-t tr{display:block;border-top:1px solid var(--line);padding:8px 0}
+  #brief-t td,#mat-t td,#h-t td,#u-t td{display:block;border:0;padding:1px 0;white-space:normal}
   #brief-t td.k,#mat-t td.k{font-weight:600}
-  #h-t td[data-l]::before{content:attr(data-l) ": ";color:var(--muted);font-size:12px}
+  #h-t td[data-l]::before,#u-t td[data-l]::before{content:attr(data-l) ": ";color:var(--muted);font-size:12px}
 }
 @media (prefers-reduced-motion:no-preference){ .btn,.modes button,.step button{transition:background .15s} }
 </style>
@@ -197,21 +210,45 @@ body.hist .grid{grid-template-columns:minmax(0,1fr)}
     <div class="modes" role="tablist" aria-label="Tipo de demanda">
       <button type="button" role="tab" id="m-campanha" data-mode="campanha" aria-selected="true">Campanha</button>
       <button type="button" role="tab" id="m-projeto" data-mode="projeto" aria-selected="false">Projeto</button>
-      <button type="button" role="tab" id="m-urgencia" data-mode="urgencia" aria-selected="false">Urgência</button>
+      <button type="button" role="tab" id="m-andamento" data-mode="andamento" aria-selected="false">Andamento</button>
       <button type="button" role="tab" id="m-historico" data-mode="historico" aria-selected="false">Histórico</button>
+      <button type="button" role="tab" id="m-config" data-mode="config" aria-selected="false" hidden>Configurações</button>
     </div>
   </header>
 
   <div class="card" id="gate" hidden>
-    <div class="blk-h"><h2>Senha da equipe</h2></div>
-    <p class="hint">Digite a senha para ver e salvar as campanhas compartilhadas.</p>
-    <div class="f2"><input type="password" id="pw" autocomplete="current-password" aria-label="Senha da equipe"><button type="button" class="btn" id="btn-pw" style="justify-self:start">Entrar</button></div>
-    <div class="al bad" id="pw-err" hidden>Senha incorreta. Tente de novo.</div>
+    <div id="gate-login">
+      <div class="blk-h"><h2>Entrar</h2></div>
+      <p class="hint">Use o usuário e a senha que o administrador criou para você.</p>
+      <div class="f2">
+        <div class="field"><span>Usuário</span><input type="text" id="lg-user" autocomplete="username" autocapitalize="none" spellcheck="false"></div>
+        <div class="field"><span>Senha</span><input type="password" id="lg-pass" autocomplete="current-password"></div>
+      </div>
+      <div class="btns"><button type="button" class="btn" id="btn-login">Entrar</button></div>
+      <div class="al bad" id="lg-err" hidden></div>
+    </div>
+    <div id="gate-chg" hidden>
+      <div class="blk-h"><h2>Definir nova senha</h2></div>
+      <p class="hint" id="chg-hint">Use pelo menos 8 caracteres.</p>
+      <div class="stack">
+        <div class="field"><span>Senha atual</span><input type="password" id="chg-atual" autocomplete="current-password"></div>
+        <div class="f2">
+          <div class="field"><span>Senha nova</span><input type="password" id="chg-nova" autocomplete="new-password"></div>
+          <div class="field"><span>Repita a senha nova</span><input type="password" id="chg-conf" autocomplete="new-password"></div>
+        </div>
+      </div>
+      <div class="btns"><button type="button" class="btn" id="btn-chg-save">Salvar senha</button><button type="button" class="btn ghost" id="btn-chg-cancel" hidden>Cancelar</button></div>
+      <div class="al bad" id="chg-err" hidden></div>
+    </div>
   </div>
 
   <div class="bar">
     <span id="store-msg" role="status">Conectando ao armazenamento...</span>
-    <span class="who"><label for="autor">Seu nome</label><input type="text" id="autor" placeholder="Ex.: Manu" autocomplete="name"><button type="button" class="btn ghost small" id="btn-refresh">Atualizar lista</button></span>
+    <span class="who">
+      <span id="who-srv" hidden><b id="who-nome"></b> <span class="tag" id="who-role"></span> <button type="button" class="btn ghost small" id="btn-senha">Alterar senha</button> <button type="button" class="btn ghost small" id="btn-sair">Sair</button></span>
+      <span id="who-loc" hidden><label for="autor">Quem está criando</label><select id="autor" aria-label="Quem está criando"></select></span>
+      <button type="button" class="btn ghost small" id="btn-refresh">Atualizar lista</button>
+    </span>
   </div>
 
   <div class="grid">
@@ -236,8 +273,8 @@ body.hist .grid{grid-template-columns:minmax(0,1fr)}
             <div class="field"><span>O que muda</span><textarea id="c-desc" placeholder="Em poucas linhas: o que é a melhoria e o problema que ela resolve"></textarea></div>
             <div class="field"><span>Mensagem principal</span><input type="text" id="c-msg" placeholder="O que o cliente precisa saber, em uma frase" autocomplete="off"></div>
             <div class="f2">
-              <div class="field"><span>Responsável em Produto</span><input type="text" id="c-resp" autocomplete="off"></div>
-              <div class="field"><span>Quem aprova a comunicação</span><input type="text" id="c-aprov" autocomplete="off"></div>
+              <div class="field"><span>Responsável em Produto</span><select id="c-resp"></select></div>
+              <div class="field"><span>Quem aprova a comunicação</span><select id="c-aprov"></select></div>
             </div>
             <div class="field"><span>Links de apoio</span><textarea id="c-links" placeholder="Documentação, protótipo, prints, ambiente de teste"></textarea></div>
             <div class="field"><span>Observações e riscos</span><textarea id="c-obs"></textarea></div>
@@ -318,36 +355,56 @@ body.hist .grid{grid-template-columns:minmax(0,1fr)}
       <!-- PROJETO -->
       <div id="f-projeto" class="stack" hidden>
         <div class="card">
-          <div class="blk-h"><h2>Projeto (processo)</h2></div>
-          <p class="hint">Projetos com equipes ou entregas externas ficam fora da pontuação. O prazo é de 1 sprint (5 dias úteis) ou mais, definido caso a caso.</p>
-          <div class="field"><span>Nome do projeto</span><input type="text" id="p-nome" placeholder="Ex.: Redesign do e-mail de boas-vindas" autocomplete="off"></div>
-          <div class="f2" style="margin-top:12px">
-            <div class="field"><span>Início</span><input type="date" id="p-inicio"></div>
-            <div class="field"><span>Sprints estimadas</span>
-              <div class="step" style="width:max-content"><button type="button" data-step="p-sprints" data-d="-1" data-max="8" data-min="1" aria-label="Menos sprints">−</button><output id="p-sprints">1</output><button type="button" data-step="p-sprints" data-d="1" data-max="8" data-min="1" aria-label="Mais sprints">+</button></div></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="blk-h"><h2>Antes de começar</h2></div>
+          <div class="blk-h"><h2>Projeto (processo)</h2><button type="button" class="btn ghost small" id="btn-limpar-proj">Novo projeto</button></div>
+          <p class="hint">Projetos com equipes ou entregas externas ficam fora da pontuação. O prazo é de 1 sprint (5 dias úteis) ou mais. Escolha as opções e escreva só o nome.</p>
           <div class="stack">
-            <div class="field"><span>Objetivo e o que entra no MVP</span><textarea id="p-obj"></textarea></div>
-            <div class="field"><span>Quem participa e o que cada equipe entrega</span><textarea id="p-quem"></textarea></div>
-            <div class="field"><span>Critério de aprovação do MVP</span><textarea id="p-crit"></textarea></div>
-            <div class="field"><span>Prazo negociado para o MVP e para a versão final</span><textarea id="p-prazo"></textarea></div>
+            <div class="field"><span>Nome do projeto</span><input type="text" id="p-nome" placeholder="Ex.: Redesign do e-mail de boas-vindas" autocomplete="off"></div>
+            <div class="f2">
+              <div class="field"><span>Tipo de projeto</span><select id="p-tipo"></select></div>
+              <div class="field"><span>Objetivo principal</span><select id="p-obj"></select></div>
+            </div>
+            <div class="f2">
+              <div class="field"><span>Responsável em Produto</span><select id="p-resp"></select></div>
+              <div class="field"><span>Quem aprova o MVP</span><select id="p-aprov"></select></div>
+            </div>
+            <div class="f2">
+              <div class="field"><span>Depende de alguém de fora do time?</span><select id="p-dep"></select></div>
+              <div class="field"><span>Prioridade</span><select id="p-prio"><option value="normal">Normal</option><option value="alta">Alta</option></select></div>
+            </div>
           </div>
         </div>
-      </div>
-
-      <!-- URGENCIA -->
-      <div id="f-urgencia" class="stack" hidden>
         <div class="card">
-          <div class="blk-h"><h2>Urgência</h2></div>
-          <p class="hint">Problema imprevisto que o CS ou o Suporte precisa comunicar. Fica fora do porte e não tem folga.</p>
-          <div class="field"><span>Descrição curta</span><input type="text" id="u-nome" placeholder="Ex.: Instabilidade no login" autocomplete="off"></div>
-          <div style="margin-top:12px">
-            <label class="opt" for="u-sis"><input type="radio" name="u-tipo" id="u-sis" value="sis" checked><span class="lbl"><span>Anúncio dentro do sistema ou e-mail de urgência</span><small>15 a 30 minutos</small></span></label>
-            <label class="opt" for="u-base"><input type="radio" name="u-tipo" id="u-base" value="base"><span class="lbl"><span>E-mail para a base por mudança urgente</span><small>Mínimo de 1 dia útil, para criar com calma e disparar da melhor forma</small></span></label>
+          <div class="blk-h"><h2>Entregáveis do MVP</h2></div>
+          <p class="hint">Marque tudo o que entra no MVP.</p>
+          <div class="chips" id="p-ent"></div>
+        </div>
+        <div class="card">
+          <div class="blk-h"><h2>Quem participa</h2></div>
+          <p class="hint">Marque as equipes que entregam alguma parte.</p>
+          <div class="chips" id="p-part"></div>
+        </div>
+        <div class="card">
+          <div class="blk-h"><h2>Prazo</h2></div>
+          <div class="f2">
+            <div class="field"><span>Início</span><input type="date" id="p-inicio"></div>
+            <div class="field"><span>MVP desejado até</span><input type="date" id="p-desejo"><small>Opcional. Compara com o prazo.</small></div>
           </div>
+          <div class="field" style="margin-top:12px"><span>Sprints estimadas</span>
+            <div class="step" style="width:max-content"><button type="button" data-step="p-sprints" data-d="-1" data-max="8" data-min="1" aria-label="Menos sprints">−</button><output id="p-sprints">1</output><button type="button" data-step="p-sprints" data-d="1" data-max="8" data-min="1" aria-label="Mais sprints">+</button></div></div>
+          <div class="field" style="margin-top:12px"><span>Observação (opcional)</span><input type="text" id="p-obs" placeholder="Algo que a equipe precisa saber" autocomplete="off"></div>
+        </div>
+        <div class="card" id="psum-card">
+          <div class="blk-h"><h2>Resumo do projeto</h2></div>
+          <div class="blk-h" style="margin-top:8px">
+            <div class="seg" id="psum-seg" role="group" aria-label="Tipo de resumo">
+              <button type="button" data-s="interno" aria-pressed="true">Resumo interno</button>
+              <button type="button" data-s="trello" aria-pressed="false">Card do Trello</button>
+              <button type="button" data-s="contexto" aria-pressed="false">Contexto para o Claude</button>
+            </div>
+          </div>
+          <div id="ptrello-box" hidden></div>
+          <pre class="pre" id="psum-pre"></pre>
+          <div class="btns"><button type="button" class="btn" id="btn-psumcopy">Copiar resumo interno</button></div>
         </div>
       </div>
 
@@ -365,6 +422,41 @@ body.hist .grid{grid-template-columns:minmax(0,1fr)}
         <div class="btns"><button type="button" class="btn" id="btn-brief">Copiar briefing</button><button type="button" class="btn ghost" id="btn-auto" hidden>Usar o porte calculado</button></div>
       </div>
 
+      <!-- ANDAMENTO -->
+      <div id="f-andamento" class="stack" hidden>
+        <div class="card">
+          <div class="blk-h"><h2>Andamento</h2></div>
+          <p class="hint">Marque o que já foi feito em cada campanha ou projeto. As marcações ficam salvas para todo o time, com quem marcou e quando.</p>
+          <div class="f2">
+            <div class="field"><span>Mostrar</span><select id="a-filtro"><option value="ativas">Em andamento</option><option value="todas">Todas, inclusive publicadas</option></select></div>
+            <div class="field"><span>Buscar</span><input type="text" id="a-q" placeholder="Nome" autocomplete="off"></div>
+          </div>
+        </div>
+        <div id="a-list" class="stack"></div>
+      </div>
+
+      <!-- CONFIG -->
+      <div id="f-config" class="stack" hidden>
+        <div class="card">
+          <div class="blk-h"><h2>Usuários</h2></div>
+          <p class="hint">Crie usuários, redefina senhas e desative quem saiu do time. Quem entra com uma senha nova troca por outra no primeiro acesso.</p>
+          <div class="tbl"><table id="u-t"></table></div>
+          <div id="u-msg"></div>
+        </div>
+        <div class="card">
+          <div class="blk-h"><h2>Novo usuário</h2></div>
+          <div class="f2">
+            <div class="field"><span>Usuário</span><input type="text" id="nu-user" placeholder="Ex.: maressa" autocomplete="off" autocapitalize="none" spellcheck="false"><small>De 3 a 30 letras minúsculas, números, ponto ou hífen.</small></div>
+            <div class="field"><span>Nome completo</span><input type="text" id="nu-nome" placeholder="Ex.: Maressa Scheroki" autocomplete="off"><small>É o nome que aparece nas edições.</small></div>
+          </div>
+          <div class="f2" style="margin-top:12px">
+            <div class="field"><span>Perfil</span><select id="nu-role"><option value="user">Usuário</option><option value="admin">Administrador</option></select><small>Só administradores gerenciam usuários e excluem itens.</small></div>
+            <div class="field"><span>Senha temporária</span><input type="text" id="nu-pass" placeholder="Deixe em branco para gerar uma" autocomplete="off"><small>A pessoa troca no primeiro acesso.</small></div>
+          </div>
+          <div class="btns"><button type="button" class="btn" id="btn-ucriar">Criar usuário</button></div>
+        </div>
+      </div>
+
       <!-- HISTORICO -->
       <div id="f-historico" class="stack" hidden>
         <div class="card">
@@ -377,7 +469,7 @@ body.hist .grid{grid-template-columns:minmax(0,1fr)}
           <div class="filters">
             <div class="field"><span>Buscar</span><input type="text" id="h-q" placeholder="Nome" autocomplete="off"></div>
             <div class="field"><span>Status</span><select id="h-st"><option value="">Todos</option><option value="planejamento">Em planejamento</option><option value="producao">Em produção</option><option value="publicada">Publicada</option><option value="cancelada">Cancelada</option></select></div>
-            <div class="field"><span>Tipo</span><select id="h-pt"><option value="">Todos</option><option>Pequena</option><option>Média</option><option>Grande</option><option>Projeto</option><option>Urgência</option></select></div>
+            <div class="field"><span>Tipo</span><select id="h-pt"><option value="">Todos</option><option>Pequena</option><option>Média</option><option>Grande</option><option>Projeto</option></select></div>
             <label class="chk"><input type="checkbox" id="h-arq"> Mostrar arquivadas</label>
           </div>
           <div class="tbl"><table id="h-t"></table></div>
@@ -484,6 +576,18 @@ var BRIEF={
     ['Calendário de NPS','A campanha coincide com alguma pesquisa de NPS?']
   ]
 };
+var PESSOAS={
+  autor:['Emanuelli Gabriel','Maressa Scheroki','Claudionor Junior'],
+  produto:['Maressa Scheroki','Victor Pagani','Gabriel Baczinski'],
+  aprova:['Maressa Scheroki','Claudionor Junior','Rafaella Barbiere','Liderança CS']
+};
+var PROJ={
+  tipos:['Redesign de e-mail ou régua','Nova régua de comunicação','Material de treinamento ou playbook (CS)','Página ou LP','Conteúdo evergreen (artigos e vídeos)','Integração ou ferramenta','Evento','Outro'],
+  objetivos:['Aumentar a adoção de funcionalidade','Reduzir chamados de suporte','Retenção e engajamento','Geração de leads','Padronizar a comunicação','Outro'],
+  ent:['E-mails','Artigos','Vídeos','Criativos','Página ou LP','Playbook','Régua ou fluxo de automação','Documento ou processo'],
+  part:['Marketing de Produto','Design','CX (dados)','CX (treinamento e qualidade)','Produto','Comercial','Suporte','Desenvolvimento','Agência ou fornecedor externo'],
+  dep:['Não depende de ninguém de fora','Desenvolvimento (Produto)','Agência ou fornecedor externo','Outra área da empresa']
+};
 var INI={canais:{beamer:1,emailGeral:0,emailSeg:1,whats:1,youtube:1},artigos:1,abr:2,deps:{design:1,cxDados:1,cxTreino:0,produto:0}};
 
 var $=function(id){return document.getElementById(id);};
@@ -503,7 +607,7 @@ function fmt(d){return d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digi
 function dias(n){return n+' '+(n===1?'dia útil':'dias úteis');}
 
 var mode='campanha',briefAuto=true,briefSel='Média',lastResumo='',lastProduto='',lastSave=null,sumSel='interno';
-var saved=[],currentId=null,currentRev=0,storeMode='pending',protectedApp=true,conflict=null,saveTimer=null,savedSig='',pwTried=false;
+var saved=[],currentId=null,currentRev=0,storeMode='pending',protectedApp=true,conflict=null,saveTimer=null,savedSig='',me=null,users=[];
 var lastContexto='',trelloParts=[],trelloAll='';
 var STL={planejamento:'Em planejamento',producao:'Em produção',publicada:'Publicada',cancelada:'Cancelada'};
 var LKEY='calc-campanhas-local-v2',PKEY='calc-campanhas-senha',AKEY='calc-campanhas-autor';
@@ -511,6 +615,15 @@ function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 
 /* ---------- build static parts ---------- */
+function fillSel(id,list,ph){$(id).innerHTML='<option value="">'+esc(ph)+'</option>'+list.map(function(x){return '<option>'+esc(x)+'</option>';}).join('');}
+function buildSelects(){
+  fillSel('autor',PESSOAS.autor,'Selecione');
+  fillSel('c-resp',PESSOAS.produto,'A definir');fillSel('c-aprov',PESSOAS.aprova,'A definir');
+  fillSel('p-resp',PESSOAS.produto,'A definir');fillSel('p-aprov',PESSOAS.aprova,'A definir');
+  fillSel('p-tipo',PROJ.tipos,'Selecione');fillSel('p-obj',PROJ.objetivos,'Selecione');fillSel('p-dep',PROJ.dep,'Selecione');
+  $('p-ent').innerHTML=PROJ.ent.map(function(t,i){return '<label class="chip" for="pe-'+i+'"><input type="checkbox" id="pe-'+i+'">'+esc(t)+'</label>';}).join('');
+  $('p-part').innerHTML=PROJ.part.map(function(t,i){return '<label class="chip" for="pp-'+i+'"><input type="checkbox" id="pp-'+i+'"'+(i===0?' checked':'')+'>'+esc(t)+'</label>';}).join('');
+}
 function buildCanais(){
   $('canais').innerHTML=CFG.canais.map(function(k){
     var v=INI.canais[k.id]||0;
@@ -554,7 +667,7 @@ function buildRules(){
     +'<tr><td>Revisão: pequena / média / grande</td><td class="m">0 / 1 / 1</td></tr>'
     +'<tr><td>Folga: pequena / média / grande</td><td class="m">1 / 2 a 3 / 2 a 3</td></tr>'
     +'<tr><td>Aviso no Beamer pedido pelo Suporte</td><td class="m">5 dias de antecedência</td></tr>');
-  h+='<p class="hint" style="margin-top:12px">O prazo é o caminho crítico: Marketing de Produto (gravação, copy e artigos), vídeo com o designer e criativo andam em paralelo. Feriados não entram na conta de datas. Cada mini-vídeo além do primeiro vídeo soma 1 dia, e ter criativo para comercial e para CS soma 1 dia: são estimativas a confirmar. Playbook, redes sociais, disparo de WhatsApp e e-mail de NPS ainda não têm prazo próprio.</p>';
+  h+='<p class="hint" style="margin-top:12px">O prazo é o caminho crítico: Marketing de Produto (gravação, copy e artigos), vídeo com o designer e criativo andam em paralelo. Feriados não entram na conta de datas. Urgências imprevistas ficam fora da calculadora: avise na hora pelo WhatsApp, anúncio no sistema ou e-mail de urgência levam de 15 a 30 minutos, e e-mail para a base leva no mínimo 1 dia útil. Cada mini-vídeo além do primeiro vídeo soma 1 dia, e ter criativo para comercial e para CS soma 1 dia: são estimativas a confirmar. Playbook, redes sociais, disparo de WhatsApp e e-mail de NPS ainda não têm prazo próprio.</p>';
   $('rules').innerHTML=h;
 }
 
@@ -945,48 +1058,128 @@ function renderCamp(){
   var bc=$('btn-sumcopy');if(!bc.dataset.busy)bc.textContent=lbls[sumSel];
   Array.prototype.forEach.call($('sum-seg').querySelectorAll('button'),function(x){x.setAttribute('aria-pressed',x.dataset.s===sumSel?'true':'false');});
   lastSave={nome:s.nome||'Sem nome',modo:'Campanha',titulo:s.porte+' · '+s.soma+'/12',prazo:rng(p.total)+' dias úteis',entrega:entrega,resumo:lastResumo,
-    porte:s.porte,soma:s.soma,status:statusSel,comunicacao:$('c-pedida').value,publicacaoReal:realD?$('c-real').value:'',prevLo:p.total[0],prevHi:p.total[1],diasReais:diasReais};
+    itens:campItens(ctx),porte:s.porte,soma:s.soma,status:statusSel,comunicacao:$('c-pedida').value,publicacaoReal:realD?$('c-real').value:'',prevLo:p.total[0],prevHi:p.total[1],diasReais:diasReais};
   if(briefAuto)briefSel=s.porte;
   renderBrief();
 }
 
 /* ---------- projeto ---------- */
+function marcados(prefix,list){return list.filter(function(_,i){return $(prefix+i).checked;});}
+function projCards(x){
+  var g=x.g,nome=g('p-nome')||'[nome do projeto]',aprov=g('p-aprov')||'[quem aprova: a definir]';
+  var ent=x.ent.length?x.ent.join(', '):'[entregáveis a definir]';
+  var outras=x.part.filter(function(t){return t!=='Marketing de Produto';});
+  var data=x.desej?fmt(x.desej):'[a definir] (MVP previsto: '+fmt(x.fim)+')';
+  var d=[];
+  d.push('**O QUE FAZER**');
+  d.push('Conduzir o projeto “'+nome+'”'+(g('p-tipo')?' ('+g('p-tipo').toLowerCase()+')':'')+' até o MVP: '+ent+'.');
+  d.push('');
+  d.push('**OBJETIVO**');
+  d.push((g('p-obj')?g('p-obj'):'[objetivo a definir]')+'.');
+  d.push('');
+  d.push('**ENTREGÁVEL E PRONTO QUANDO**');
+  d.push('MVP com: '+ent+'.');
+  d.push('Pronto quando: o MVP estiver aprovado por '+aprov+'; as entregas de cada equipe estiverem recebidas'+(outras.length?' ('+outras.join(', ')+')':'')+'; o prazo e o escopo da versão final estiverem combinados.');
+  d.push('');
+  d.push('**CONTEXTO E MATERIAIS**');
+  d.push('Prazo estimado de '+plur(x.k,'sprint','sprints')+' ('+x.d+' dias úteis), com início em '+fmt(x.ini)+' e MVP previsto para '+fmt(x.fim)+'. Equipes: '+x.part.join(', ')+'. Dependência externa: '+(g('p-dep')||'[a definir]')+'. Responsável em Produto: '+(g('p-resp')||'[a definir]')+'.'+(g('p-obs')?' Observação: '+fimFrase(g('p-obs')):''));
+  var ck=['Alinhar o escopo do MVP e o critério de aprovação com '+(g('p-aprov')||'o aprovador')];
+  if(outras.length)ck.push('Confirmar com cada equipe o que ela entrega ('+outras.join(', ')+')');
+  ck.push('Definir o cronograma de '+plur(x.k,'sprint','sprints')+' e a data da versão final');
+  ck.push('Produzir o MVP ('+(x.ent.length?x.ent.join(', '):'entregáveis a definir')+')');
+  ck.push('Enviar o MVP para aprovação de '+(g('p-aprov')||'o aprovador'));
+  ck.push('Ajustar conforme o retorno');
+  ck.push('Entregar a versão final e registrar o resultado');
+  var abertos=[];
+  if(x.falta.length)abertos.push('Falta definir: '+x.falta.join(', ')+'.');
+  if(!x.desej)abertos.push('A Data de Entrega do card está estimada. Falta confirmar até quando o MVP é desejado.');
+  if(!abertos.length)abertos.push('Nenhum ponto em aberto.');
+  return [{nome:'Card principal',titulo:'Projeto | '+nome,etiqueta:g('p-prio')==='alta'?'prioridade':'[a definir]',data:data,descricao:d.join('\n'),checklist:ck,abertos:abertos}];
+}
+function projContexto(x){
+  var g=x.g,aj=function(v,r){return v||('[AJUSTAR: '+r+']');},L=[];
+  L.push('CONTEXTO DO PROJETO PARA PRODUÇÃO DE CONTEÚDO');
+  L.push('');
+  L.push('Empresa: Obra Prima, software de gestão de obras para pequenas e médias construtoras.');
+  L.push('Projeto: '+aj(g('p-nome'),'nome'));
+  L.push('Tipo: '+aj(g('p-tipo'),'tipo de projeto'));
+  L.push('Objetivo principal: '+aj(g('p-obj'),'objetivo'));
+  L.push('Entregáveis do MVP: '+(x.ent.length?x.ent.join(', '):'[AJUSTAR: entregáveis]'));
+  L.push('Equipes: '+x.part.join(', '));
+  L.push('Depende de alguém de fora: '+aj(g('p-dep'),'dependência'));
+  L.push('Prazo: '+plur(x.k,'sprint','sprints')+' ('+x.d+' dias úteis), MVP previsto para '+fmt(x.fim)+(x.desej?'; desejado até '+fmt(x.desej):''));
+  L.push('Aprova o MVP: '+aj(g('p-aprov'),'aprovador')+'. Responsável em Produto: '+aj(g('p-resp'),'responsável'));
+  if(g('p-obs'))L.push('Observação: '+g('p-obs'));
+  L.push('');
+  L.push('COMO QUERO TRABALHAR');
+  L.push('- Comece pelo primeiro entregável do MVP e entregue um por vez, perguntando só o que for indispensável.');
+  L.push('- O que não estiver acima fica marcado como [AJUSTAR], sem inventar dados, datas ou links.');
+  L.push('- Use os padrões e as skills de marca do Obra Prima para cada formato.');
+  return L.join('\n');
+}
 function renderProj(){
+  var g=function(id){return $(id).value.trim();};
   var k=n('p-sprints'),d=CFG.prazos.sprint*k;
   var ini=parseD($('p-inicio').value)||new Date();
   var fim=addBD(ini,d);
-  var nome=$('p-nome').value.trim()||'Sem nome';
+  var nome=g('p-nome')||'Sem nome';
+  var ent=marcados('pe-',PROJ.ent),part=marcados('pp-',PROJ.part);
+  var desej=parseD($('p-desejo').value);
+  var falta=[];
+  if(!g('p-nome'))falta.push('nome do projeto');
+  if(!g('p-tipo'))falta.push('tipo de projeto');
+  if(!g('p-obj'))falta.push('objetivo principal');
+  if(!ent.length)falta.push('entregáveis do MVP');
+  if(!g('p-aprov'))falta.push('quem aprova o MVP');
+  if(!g('p-resp'))falta.push('responsável em Produto');
+  if(!g('p-dep'))falta.push('dependência externa');
+  var al='';
+  if(desej){
+    var av=bdDiff(ini,desej);
+    if(desej<ini)al='<div class="al bad"><b>Não cabe.</b> A data desejada é anterior ao início do projeto.</div>';
+    else if(av>=d)al='<div class="al ok"><b>Cabe.</b> Há '+dias(av)+' até a data desejada e o MVP pede '+dias(d)+'.</div>';
+    else al='<div class="al bad"><b>Não cabe.</b> Há '+dias(av)+' até a data desejada e o MVP pede '+dias(d)+'. Aumente o prazo ou reduza o escopo.</div>';
+  }
   $('res').innerHTML=
     '<div class="porte"><div><div class="nm">Projeto</div><div class="pts">Fora da pontuação de porte</div></div></div>'
     +'<h3>Prazo</h3><div class="prazo"><span class="big">'+d+'</span><span>dias úteis</span></div>'
-    +'<p class="hint" style="margin:8px 0 0">'+k+' '+(k===1?'sprint':'sprints')+' de '+CFG.prazos.sprint+' dias úteis. Chega a um MVP, não à versão final.</p>'
-    +'<div class="datas"><div><span>Início:</span> '+fmt(ini)+'</div><div><span>MVP previsto:</span> '+fmt(fim)+'</div></div>'
-    +'<div class="al info">Antes de começar, preencha os quatro campos: objetivo do MVP, quem participa, critério de aprovação e prazo negociado.</div>'
+    +'<p class="hint" style="margin:8px 0 0">'+plur(k,'sprint','sprints')+' de '+CFG.prazos.sprint+' dias úteis. Chega a um MVP, não à versão final.</p>'
+    +'<div class="datas"><div><span>Início:</span> '+fmt(ini)+'</div><div><span>MVP previsto:</span> '+fmt(fim)+'</div>'+(desej?'<div><span>MVP desejado:</span> '+fmt(desej)+'</div>':'')+'</div>'
+    +al
+    +(falta.length?'<div class="al warn"><b>Falta escolher:</b> '+esc(falta.join(', '))+'.</div>':'<div class="al ok"><b>Tudo preenchido.</b> O card e o contexto estão prontos.</div>')
     +'<div class="btns"><button type="button" class="btn" id="btn-resumo">Copiar resumo</button><button type="button" class="btn ghost" id="btn-salvar">Salvar agora</button></div>';
   $('mini').innerHTML='<b>Projeto</b><span>'+d+' dias úteis · MVP em '+fmt(fim)+'</span>';
-  var L=['PROJETO: '+nome,'Prazo: '+k+' '+(k===1?'sprint':'sprints')+' ('+d+' dias úteis), MVP previsto para '+fmt(fim),
-    'Objetivo e MVP: '+($('p-obj').value.trim()||'a definir'),
-    'Quem participa e o que entrega: '+($('p-quem').value.trim()||'a definir'),
-    'Critério de aprovação do MVP: '+($('p-crit').value.trim()||'a definir'),
-    'Prazo negociado: '+($('p-prazo').value.trim()||'a definir')];
+  var L=['PROJETO: '+nome,
+    'Tipo: '+(g('p-tipo')||'a definir')+' | Objetivo: '+(g('p-obj')||'a definir'),
+    'Entregáveis do MVP: '+(ent.length?ent.join(', '):'a definir'),
+    'Equipes: '+part.join(', '),
+    'Depende de alguém de fora: '+(g('p-dep')||'a definir'),
+    'Aprova o MVP: '+(g('p-aprov')||'a definir')+' | Responsável em Produto: '+(g('p-resp')||'a definir'),
+    'Prazo: '+plur(k,'sprint','sprints')+' ('+d+' dias úteis), início '+fmt(ini)+', MVP previsto para '+fmt(fim)+(desej?', desejado até '+fmt(desej):''),
+    'Prioridade: '+(g('p-prio')==='alta'?'alta':'normal')];
+  if(g('p-obs'))L.push('Observação: '+g('p-obs'));
   lastResumo=L.join('\n');
-  lastSave={nome:nome,modo:'Projeto',titulo:k+' '+(k===1?'sprint':'sprints'),prazo:d+' dias úteis',entrega:'MVP em '+fmt(fim),resumo:lastResumo,porte:'Projeto'};
+  var x={g:g,k:k,d:d,ini:ini,fim:fim,desej:desej,ent:ent,part:part,falta:falta};
+  var pc=projCards(x);
+  $('ptrello-box').innerHTML=trelloUI(pc);
+  lastContexto=projContexto(x);
+  var sel=sumSel==='produto'?'interno':sumSel;
+  $('ptrello-box').hidden=sel!=='trello';$('psum-pre').hidden=sel==='trello';
+  $('psum-pre').textContent=sel==='contexto'?lastContexto:lastResumo;
+  var lb={interno:'Copiar resumo interno',trello:'Copiar o card completo',contexto:'Copiar contexto para o Claude'};
+  var bc=$('btn-psumcopy');if(!bc.dataset.busy)bc.textContent=lb[sel];
+  Array.prototype.forEach.call($('psum-seg').querySelectorAll('button'),function(b){b.setAttribute('aria-pressed',b.dataset.s===sel?'true':'false');});
+  lastSave={nome:nome,modo:'Projeto',titulo:plur(k,'sprint','sprints'),prazo:d+' dias úteis',entrega:'MVP em '+fmt(fim),resumo:lastResumo,porte:'Projeto',itens:pc[0].checklist};
 }
-
-/* ---------- urgência ---------- */
-function renderUrg(){
-  var base=$('u-base').checked;
-  var nome=$('u-nome').value.trim()||'Sem descrição';
-  var prazo=base?'Mínimo de 1 dia útil':'15 a 30 minutos';
-  $('res').innerHTML=
-    '<div class="porte"><div><div class="nm">Urgência</div><div class="pts">Sem porte e sem folga</div></div></div>'
-    +'<h3>Prazo</h3><div class="prazo"><span class="big">'+(base?'1':'15–30')+'</span><span>'+(base?'dia útil':'minutos')+'</span></div>'
-    +'<div class="al warn"><b>Avise na hora pelo WhatsApp.</b> Marketing e gestão negociam o prazo em conjunto.</div>'
-    +'<div class="al info">'+(base?'O dia serve para criar com calma e disparar para a base da melhor forma.':'Anúncio no sistema ou e-mail de urgência sobe rápido.')+'</div>'
-    +'<div class="btns"><button type="button" class="btn" id="btn-resumo">Copiar resumo</button><button type="button" class="btn ghost" id="btn-salvar">Salvar agora</button></div>';
-  $('mini').innerHTML='<b>Urgência</b><span>'+prazo+'</span>';
-  lastResumo='URGÊNCIA: '+nome+'\nTipo: '+(base?'e-mail para a base':'anúncio no sistema ou e-mail de urgência')+'\nPrazo: '+prazo+'\nAvisar na hora pelo WhatsApp para negociar em conjunto com a gestão.';
-  lastSave={nome:nome,modo:'Urgência',titulo:base?'E-mail para a base':'Anúncio no sistema',prazo:prazo,entrega:'',resumo:lastResumo,porte:'Urgência'};
+function resetProj(){
+  clearTimeout(saveTimer);
+  $('f-projeto').querySelectorAll('input[type=text],input[type=date]').forEach(function(e){e.value='';});
+  ['p-tipo','p-obj','p-resp','p-aprov','p-dep'].forEach(function(id){$(id).selectedIndex=0;});
+  $('p-prio').value='normal';
+  $('f-projeto').querySelectorAll('.chips input').forEach(function(e,i){e.checked=(e.id==='pp-0');});
+  $('p-sprints').textContent='1';$('p-inicio').value=iso(new Date());
+  currentId=null;currentRev=0;savedSig='';conflict=null;setHash('');
+  renderSaved();update();
 }
 
 /* ---------- briefing ---------- */
@@ -1012,29 +1205,219 @@ function setStatusHTML(h,cls){var m=$('store-msg');m.innerHTML=h;m.className=cls
 function findItem(id){return saved.filter(function(x){return x.id===id;})[0];}
 function upsert(it){var i=saved.findIndex(function(x){return x.id===it.id;});if(i>=0)saved[i]=it;else saved.unshift(it);saved.sort(function(a,b){return String(b.updatedAt).localeCompare(String(a.updatedAt));});}
 function setHash(id){try{history.replaceState(null,'',id?'#c='+id:location.pathname+location.search);}catch(e){}}
-function api(method,id,body){
-  var h={'Content-Type':'application/json'},pw=lsGet(PKEY);if(pw)h['x-app-password']=pw;
-  return fetch('/api/campanhas'+(id?'?id='+encodeURIComponent(id):''),{method:method,headers:h,body:body?JSON.stringify(body):undefined})
+function call(method,url,body){
+  return fetch(url,{method:method,headers:{'Content-Type':'application/json','x-requested-with':'calc'},body:body?JSON.stringify(body):undefined})
     .then(function(r){return r.json().catch(function(){return {};}).then(function(j){return {status:r.status,data:j};});});
 }
+function api(method,id,body){return call(method,'/api/campanhas'+(id?'?id='+encodeURIComponent(id):''),body);}
 function localLoad(){try{return JSON.parse(lsGet(LKEY)||'[]');}catch(e){return [];}}
 function localPut(){lsSet(LKEY,JSON.stringify(saved));}
-function needPassword(){storeMode='auth';$('gate').hidden=false;$('pw-err').hidden=!pwTried;setStatus('Aguardando a senha da equipe.','warn');renderSaved();}
-function goLocal(msg){storeMode='local';saved=localLoad();setStatus(msg||'Modo local: as campanhas ficam salvas só neste navegador.','warn');afterLoad();}
-function afterLoad(){$('gate').hidden=true;renderSaved();openFromHash();if(storeMode==='server'){setStatus(protectedApp?'Salvamento compartilhado ativo.':'Salvamento compartilhado ativo, mas sem senha: qualquer pessoa com o link pode ver e editar.',protectedApp?'ok':'warn');}}
+function autorAtual(){return me?me.nome:($('autor').value||'');}
+function podeExcluir(){return storeMode!=='server'||!!(me&&me.role==='admin');}
+function setMe(u){
+  me=u;
+  $('who-nome').textContent=u.nome;$('who-role').textContent=u.role==='admin'?'administrador':'usuário';
+  $('who-srv').hidden=false;$('who-loc').hidden=true;$('m-config').hidden=u.role!=='admin';
+}
+function needLogin(){
+  storeMode='auth';me=null;
+  $('who-srv').hidden=true;$('m-config').hidden=true;
+  $('gate').hidden=false;$('gate-login').hidden=false;$('gate-chg').hidden=true;
+  document.body.classList.add('locked');
+  setStatus('Entre para ver as campanhas.','warn');renderSaved();
+}
+function needPassword(){needLogin();}
+function showChange(forced){
+  if(forced){storeMode='chg';document.body.classList.add('locked');}
+  $('gate').hidden=false;$('gate-login').hidden=true;$('gate-chg').hidden=false;
+  $('btn-chg-cancel').hidden=!!forced;$('chg-err').hidden=true;
+  $('chg-hint').textContent=forced?'Por segurança, defina uma senha nova antes de continuar. Use pelo menos 8 caracteres.':'Use pelo menos 8 caracteres.';
+  ['chg-atual','chg-nova','chg-conf'].forEach(function(id){$(id).value='';});
+  if(forced)setStatus('Defina uma nova senha para continuar.','warn');
+}
+function goLocal(msg){
+  storeMode='local';me=null;saved=localLoad();
+  $('who-srv').hidden=true;$('who-loc').hidden=false;$('m-config').hidden=true;
+  setStatus(msg||'Modo local: as campanhas ficam salvas só neste navegador.','warn');afterLoad();
+}
+function afterLoad(){
+  $('gate').hidden=true;document.body.classList.remove('locked');
+  renderSaved();openFromHash();
+  if(storeMode==='server')setStatus('Salvamento compartilhado ativo.','ok');
+}
 function initStore(){
+  return call('GET','/api/auth').then(function(r){
+    if(r.status===200){setMe(r.data.user);if(me.mustChange)showChange(true);else loadCampanhas();}
+    else if(r.status===401)needLogin();
+    else if(r.status===503)goLocal(r.data&&r.data.error==='session_secret_missing'?'Falta criar a variável SESSION_SECRET no Vercel. Salvando só neste navegador.':'O banco de dados ainda não foi configurado no Vercel. Salvando só neste navegador.');
+    else goLocal('');
+  },function(){goLocal('');});
+}
+function loadCampanhas(){
   return api('GET').then(function(r){
-    if(r.status===200){storeMode='server';protectedApp=!!r.data.protected;saved=r.data.items||[];afterLoad();}
-    else if(r.status===401){needPassword();}
-    else goLocal(r.status===503?'O banco de dados ainda não foi configurado no Vercel. Salvando só neste navegador.':'');
+    if(r.status===200){storeMode='server';saved=r.data.items||[];afterLoad();}
+    else if(r.status===401)needLogin();
+    else if(r.status===403)showChange(true);
+    else goLocal('Não foi possível ler as campanhas do servidor. Salvando só neste navegador.');
   },function(){goLocal('');});
 }
 function refresh(){
   if(storeMode!=='server')return;
-  api('GET').then(function(r){if(r.status===200){saved=r.data.items||[];renderSaved();}else if(r.status===401){needPassword();}},function(){});
+  api('GET').then(function(r){if(r.status===200){saved=r.data.items||[];renderSaved();}else if(r.status===401){needLogin();}},function(){});
 }
-function renderSaved(){if(mode==='historico')renderHist();}
-function tipoDe(it){return it.k==='campanha'?(it.porte||'Campanha'):(it.k==='projeto'?'Projeto':'Urgência');}
+function doLogin(){
+  var u=$('lg-user').value.trim(),p=$('lg-pass').value,er=$('lg-err');
+  er.hidden=true;
+  if(!u||!p){er.textContent='Informe o usuário e a senha.';er.hidden=false;return;}
+  call('POST','/api/auth?acao=login',{usuario:u,senha:p}).then(function(r){
+    if(r.status===200){$('lg-pass').value='';setMe(r.data.user);if(me.mustChange)showChange(true);else loadCampanhas();}
+    else{
+      er.textContent=r.status===429?'Muitas tentativas. Aguarde alguns minutos e tente de novo.':(r.status===503?'O servidor ainda não está configurado. Veja a mensagem no topo da página.':'Usuário ou senha incorretos.');
+      er.hidden=false;
+    }
+  },function(){er.textContent='Sem conexão. Tente de novo.';er.hidden=false;});
+}
+function doLogout(){
+  call('POST','/api/auth?acao=logout').then(function(){
+    saved=[];currentId=null;currentRev=0;savedSig='';setHash('');needLogin();
+  },function(){});
+}
+function doChange(){
+  var er=$('chg-err'),a=$('chg-atual').value,n=$('chg-nova').value,c2=$('chg-conf').value;
+  var erro=function(t){er.textContent=t;er.hidden=false;};
+  er.hidden=true;
+  if(n.length<8){erro('A senha nova precisa ter pelo menos 8 caracteres.');return;}
+  if(n!==c2){erro('A confirmação não confere com a senha nova.');return;}
+  call('POST','/api/auth?acao=senha',{atual:a,nova:n}).then(function(r){
+    if(r.status===200){
+      setMe(r.data.user);$('gate').hidden=true;document.body.classList.remove('locked');
+      if(storeMode!=='server')loadCampanhas();else setStatus('Senha alterada.','ok');
+    }else if(r.status===401)erro('A senha atual está incorreta.');
+    else if(r.status===400)erro('A senha nova precisa ter de 8 a 100 caracteres e ser diferente do usuário.');
+    else erro('Não foi possível trocar a senha agora.');
+  },function(){erro('Sem conexão. Tente de novo.');});
+}
+
+/* ---------- usuários (configurações) ---------- */
+function genPass(){
+  var A='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789',o='',a=new Uint32Array(12);
+  (window.crypto||window.msCrypto).getRandomValues(a);
+  for(var i=0;i<12;i++)o+=A[a[i]%A.length];
+  return o;
+}
+function userErr(e){
+  return ({exists:'Esse usuário já existe.',invalid_username:'Usuário inválido. Use de 3 a 30 letras minúsculas, números, ponto, hífen ou sublinhado.',invalid_name:'Informe o nome completo.',weak_password:'A senha precisa ter de 8 a 100 caracteres.',self_change:'Você não pode desativar nem rebaixar o próprio usuário.',last_admin:'É preciso manter pelo menos um administrador ativo.',forbidden:'Somente administradores fazem isso.'})[e]||'Não foi possível concluir agora.';
+}
+function showSecret(label,secret){
+  $('u-msg').innerHTML='<div class="al ok"><b>'+label+'</b> <span class="secret">'+esc(secret)+'</span> <button type="button" class="btn ghost small" data-copysec="'+esc(secret)+'">Copiar</button><br>Ela aparece só agora. Envie para a pessoa, que troca no primeiro acesso.</div>';
+}
+function loadUsers(){
+  $('u-t').innerHTML='<tr><td>Carregando...</td></tr>';
+  call('GET','/api/usuarios').then(function(r){
+    if(r.status===200){users=r.data.users||[];renderUsers();}
+    else if(r.status===401)needLogin();
+    else if(r.status===403)$('u-t').innerHTML='<tr><td>Somente administradores acessam esta área.</td></tr>';
+    else $('u-t').innerHTML='<tr><td>Não foi possível carregar os usuários agora.</td></tr>';
+  },function(){$('u-t').innerHTML='<tr><td>Sem conexão.</td></tr>';});
+}
+function renderUsers(){
+  var hd='<tr><th>Usuário</th><th>Nome</th><th>Perfil</th><th>Status</th><th>Último acesso</th><th></th></tr>';
+  $('u-t').innerHTML=hd+users.map(function(u){
+    var eu=me&&u.usuario===me.usuario,id=esc(u.usuario);
+    return '<tr><td data-l="Usuário"><b>'+id+'</b>'+(eu?' <span class="tag">você</span>':'')+'</td>'
+      +'<td data-l="Nome">'+esc(u.nome)+'</td>'
+      +'<td data-l="Perfil">'+(u.role==='admin'?'Administrador':'Usuário')+'</td>'
+      +'<td data-l="Status">'+(u.ativo?(u.mustChange?'Aguardando troca de senha':'Ativo'):'Desativado')+'</td>'
+      +'<td data-l="Último acesso">'+(u.ultimoLogin?dthm(u.ultimoLogin):'—')+'</td>'
+      +'<td><button type="button" class="btn ghost small" data-ua="reset" data-u="'+id+'">Redefinir senha</button> '
+      +(eu?'':'<button type="button" class="btn ghost small" data-ua="toggle" data-u="'+id+'">'+(u.ativo?'Desativar':'Reativar')+'</button> <button type="button" class="btn ghost small" data-ua="role" data-u="'+id+'">'+(u.role==='admin'?'Tornar usuário':'Tornar admin')+'</button>')
+      +'</td></tr>';
+  }).join('');
+}
+function userAction(act,u){
+  var t=users.filter(function(x){return x.usuario===u;})[0];if(!t)return;
+  var body,secret=null;
+  if(act==='reset'){secret=genPass();body={senha:secret};}
+  else if(act==='toggle')body={ativo:!t.ativo};
+  else body={role:t.role==='admin'?'user':'admin'};
+  call('PUT','/api/usuarios?u='+encodeURIComponent(u),body).then(function(r){
+    if(r.status===200){if(secret)showSecret('Senha temporária de '+t.nome+':',secret);else $('u-msg').innerHTML='';loadUsers();}
+    else if(r.status===401)needLogin();
+    else $('u-msg').innerHTML='<div class="al bad">'+esc(userErr(r.data&&r.data.error))+'</div>';
+  },function(){$('u-msg').innerHTML='<div class="al bad">Sem conexão.</div>';});
+}
+function createUser(){
+  var u=$('nu-user').value.trim().toLowerCase(),n=$('nu-nome').value.trim(),ro=$('nu-role').value,pw=$('nu-pass').value.trim()||genPass();
+  call('POST','/api/usuarios',{usuario:u,nome:n,role:ro,senha:pw}).then(function(r){
+    if(r.status===201){showSecret('Usuário criado. Senha temporária:',pw);$('nu-user').value='';$('nu-nome').value='';$('nu-pass').value='';loadUsers();}
+    else if(r.status===401)needLogin();
+    else $('u-msg').innerHTML='<div class="al bad">'+esc(userErr(r.data&&r.data.error))+'</div>';
+  },function(){$('u-msg').innerHTML='<div class="al bad">Sem conexão.</div>';});
+}
+
+/* ---------- andamento ---------- */
+function campItens(x){
+  var it=[];
+  if(!x.dt('c-prod')||!x.ped)it.push('Datas confirmadas com Produto');
+  if($('c-doc').value==='espera')it.push('Documentação de produto recebida');
+  if(x.segNec&&$('c-seg').value==='espera')it.push('Segmentação recebida');
+  x.mats.forEach(function(m){it.push(m.nome);});
+  it.push('Materiais revisados e aprovados');
+  it.push('Comunicação publicada');
+  return it.slice(0,40);
+}
+function cardAnd(it){
+  var itens=it.itens||[],and=it.andamento||{};
+  var feitos=itens.filter(function(t){return and[t]&&and[t].feito;}).length;
+  var pct=itens.length?Math.round(feitos/itens.length*100):0;
+  var st=it.k==='campanha'?(it.status||'planejamento'):'';
+  var lista=itens.length?itens.map(function(t,i){
+    var a=and[t]||{};
+    return '<label class="chk-row'+(a.feito?' done':'')+'"><input type="checkbox" data-and="'+esc(it.id)+'" data-i="'+i+'"'+(a.feito?' checked':'')+'><span><span class="t">'+esc(t)+'</span>'+(a.feito&&a.por?'<br><small>'+esc(a.por)+(a.em?' · '+dthm(a.em):'')+'</small>':'')+'</span></label>';
+  }).join(''):'<p class="hint" style="margin:8px 0 0">Abra a campanha e salve de novo para gerar a lista de itens.</p>';
+  return '<div class="card"><div class="blk-h"><h2>'+esc(it.nome)+'</h2>'+(st?'<span class="st '+st+'">'+STL[st]+'</span>':'<span class="tag">Projeto</span>')+'</div>'
+    +'<p class="hint" style="margin:0 0 8px">'+esc(tipoDe(it))+(it.prazo?' · '+esc(it.prazo):'')+(it.entrega?' · '+esc(it.entrega):'')+'</p>'
+    +'<div style="display:flex;align-items:center;gap:10px"><div class="pbar" style="flex:1"><i style="width:'+pct+'%"></i></div><b>'+feitos+'/'+itens.length+'</b></div>'
+    +'<div>'+lista+'</div>'
+    +'<div class="btns"><button type="button" class="btn ghost small" data-act="open" data-id="'+esc(it.id)+'">Abrir</button>'
+    +(it.k==='campanha'&&st!=='publicada'?'<button type="button" class="btn small" data-act="pub" data-id="'+esc(it.id)+'">Marcar como publicada hoje</button>':'')
+    +'</div></div>';
+}
+function renderAnd(){
+  if(storeMode==='pending'){$('a-list').innerHTML='<div class="card"><p class="hint" style="margin:0">Carregando...</p></div>';return;}
+  if(storeMode==='auth'||storeMode==='chg'){$('a-list').innerHTML='<div class="card"><p class="hint" style="margin:0">Entre para ver o andamento.</p></div>';return;}
+  var f=$('a-filtro').value,q=$('a-q').value.trim().toLowerCase();
+  var rows=saved.filter(function(it){
+    if(it.arquivada||it.k==='urgencia')return false;
+    if(q&&String(it.nome).toLowerCase().indexOf(q)<0)return false;
+    if(f==='ativas'&&(it.status==='publicada'||it.status==='cancelada'))return false;
+    return true;
+  });
+  $('a-list').innerHTML=rows.length?rows.map(cardAnd).join(''):'<div class="card"><p class="hint" style="margin:0">Nenhuma campanha ou projeto por aqui. Preencha uma campanha com nome para ela aparecer.</p></div>';
+}
+function toggleAnd(id,i,feito){
+  var it=findItem(id);if(!it||!it.itens)return;
+  var chave=it.itens[i];if(!chave)return;
+  var antes=JSON.parse(JSON.stringify(it.andamento||{}));
+  var a=Object.assign({},it.andamento||{});a[chave]={feito:feito,por:autorAtual(),em:new Date().toISOString()};
+  it.andamento=a;renderAnd();
+  var desfazer=function(t){it.andamento=antes;renderAnd();setStatus(t,'bad');};
+  if(storeMode==='server'){
+    call('PUT','/api/campanhas?id='+encodeURIComponent(id)+'&acao=andamento',{chave:chave,feito:feito}).then(function(r){
+      if(r.status===200){upsert(r.data.item);renderAnd();}
+      else if(r.status===401)needLogin();
+      else desfazer('Não foi possível salvar a marcação agora.');
+    },function(){desfazer('Sem conexão. A marcação não foi salva.');});
+  }else localPut();
+}
+function marcarPublicada(id){
+  if(!openItem(id))return;
+  $('c-status').value='publicada';$('c-real').value=iso(new Date());
+  update();window.scrollTo(0,0);
+}
+
+function renderSaved(){if(mode==='historico')renderHist();else if(mode==='andamento')renderAnd();}
+function tipoDe(it){return it.k==='campanha'?(it.porte||'Campanha'):(it.k==='projeto'?'Projeto':'Urgência (antigo)');}
 function histFiltrados(){
   var q=$('h-q').value.trim().toLowerCase(),st=$('h-st').value,pt=$('h-pt').value,arq=$('h-arq').checked;
   return saved.filter(function(it){
@@ -1048,7 +1431,7 @@ function histFiltrados(){
 function media(a){return a.length?Math.round(a.reduce(function(x,y){return x+y;},0)/a.length*10)/10:null;}
 function renderHist(){
   if(storeMode==='pending'){$('h-stats').innerHTML='';$('h-t').innerHTML='<tr><td>Carregando...</td></tr>';$('h-log').innerHTML='';return;}
-  if(storeMode==='auth'){$('h-stats').innerHTML='';$('h-t').innerHTML='<tr><td>Digite a senha da equipe para ver o histórico.</td></tr>';$('h-log').innerHTML='';return;}
+  if(storeMode==='auth'){$('h-stats').innerHTML='';$('h-t').innerHTML='<tr><td>Entre para ver o histórico.</td></tr>';$('h-log').innerHTML='';return;}
   var ativos=saved.filter(function(x){return !x.arquivada;});
   var camp=ativos.filter(function(x){return x.k==='campanha';});
   var pubs=camp.filter(function(x){return x.status==='publicada'&&x.diasReais!=null&&x.prevHi!=null;});
@@ -1060,15 +1443,15 @@ function renderHist(){
   if(!rows.length){$('h-t').innerHTML=hd+'<tr><td colspan="7">Nenhum item encontrado. Preencha uma campanha com nome para ela aparecer aqui.</td></tr>';}
   else $('h-t').innerHTML=hd+rows.map(function(it){
     var st=it.k==='campanha'?(it.status||'planejamento'):'';
-    var acoes=(it.estado?'<button type="button" class="btn ghost small" data-act="open" data-id="'+esc(it.id)+'">Abrir</button> ':'')
+    var acoes=((it.estado&&it.k!=='urgencia')?'<button type="button" class="btn ghost small" data-act="open" data-id="'+esc(it.id)+'">Abrir</button> ':'')
       +(storeMode==='server'?'<button type="button" class="btn ghost small" data-act="link" data-id="'+esc(it.id)+'">Copiar link</button> ':'')
-      +(it.arquivada?'<button type="button" class="btn ghost small" data-act="unarch" data-id="'+esc(it.id)+'">Restaurar</button> <button type="button" class="btn ghost small" data-act="del" data-id="'+esc(it.id)+'">Excluir de vez</button>':'<button type="button" class="btn ghost small" data-act="arch" data-id="'+esc(it.id)+'">Arquivar</button>');
-    return '<tr><td data-l="Nome"><b>'+esc(it.nome)+'</b>'+(it.arquivada?' <span class="tag">arquivada</span>':'')+(it.id===currentId?' <span class="tag">aberta</span>':'')+'<br><small>'+esc(it.autor||'')+'</small></td>'
+      +(it.arquivada?'<button type="button" class="btn ghost small" data-act="unarch" data-id="'+esc(it.id)+'">Restaurar</button>'+(podeExcluir()?' <button type="button" class="btn ghost small" data-act="del" data-id="'+esc(it.id)+'">Excluir de vez</button>':''):'<button type="button" class="btn ghost small" data-act="arch" data-id="'+esc(it.id)+'">Arquivar</button>');
+    return '<tr><td data-l="Nome"><b>'+esc(it.nome)+'</b>'+(it.arquivada?' <span class="tag">arquivada</span>':'')+(it.id===currentId?' <span class="tag">aberta</span>':'')+'<br><small>Criada por '+esc(it.criador||it.autor||'—')+'</small></td>'
       +'<td data-l="Tipo">'+esc(tipoDe(it))+(it.soma!=null?' · '+it.soma+'/12':'')+'</td>'
       +'<td data-l="Status">'+(st?'<span class="st '+st+'">'+STL[st]+'</span>':'—')+'</td>'
       +'<td data-l="Previsto">'+esc(it.prazo||'—')+'</td>'
       +'<td data-l="Real">'+(it.diasReais!=null?dias(it.diasReais):'—')+'</td>'
-      +'<td data-l="Atualizada">'+(it.updatedAt?dthm(it.updatedAt):'—')+'</td>'
+      +'<td data-l="Atualizada">'+(it.updatedAt?dthm(it.updatedAt):'—')+(it.autor?'<br><small>'+esc(it.autor)+'</small>':'')+'</td>'
       +'<td>'+acoes+'</td></tr>';
   }).join('');
   var ev=[];
@@ -1084,7 +1467,7 @@ function histTSV(){
 }
 function archiveItem(id,flag){
   var it=findItem(id);if(!it)return;
-  var autor=$('autor').value.trim();
+  var autor=autorAtual();
   var aplicar=function(n){
     upsert(n);
     if(id===currentId&&flag){currentId=null;currentRev=0;savedSig='';conflict=null;setHash('');}
@@ -1109,7 +1492,7 @@ function pushLog(log,e){
   return l.slice(-40);
 }
 function openItem(id){
-  var op=findItem(id);if(!op||!op.estado)return false;
+  var op=findItem(id);if(!op||!op.estado||op.k==='urgencia')return false;
   clearTimeout(saveTimer);
   unsnap(op.k,op.estado);currentId=op.id;currentRev=op.rev||0;conflict=null;
   setMode(op.k);savedSig=JSON.stringify(snap(mode));
@@ -1126,6 +1509,7 @@ function scheduleSave(){
   var cur=currentId?findItem(currentId):null;
   if(cur&&cur.k&&cur.k!==mode)return;
   if(!cur&&(!lastSave.nome||lastSave.nome==='Sem nome'))return;
+  if(!autorAtual()){setStatus('Escolha quem está criando, no topo da página, para salvar.','warn');return;}
   if(JSON.stringify(snap(mode))===savedSig)return;
   clearTimeout(saveTimer);saveTimer=setTimeout(function(){doSave(false,false);},1200);
   if(!conflict)setStatus('Salvando...');
@@ -1133,9 +1517,10 @@ function scheduleSave(){
 function doSave(manual,force){
   clearTimeout(saveTimer);
   if(!lastSave||(storeMode!=='server'&&storeMode!=='local'))return Promise.resolve();
+  if(!autorAtual()){setStatus('Escolha quem está criando, no topo da página, para salvar.','warn');return Promise.resolve();}
   var est=snap(mode),sig=JSON.stringify(est);
   if(!manual&&sig===savedSig)return Promise.resolve();
-  var item=Object.assign({},lastSave,{estado:est,k:mode,produto:mode==='campanha'?lastProduto:'',autor:$('autor').value.trim()});
+  var item=Object.assign({},lastSave,{estado:est,k:mode,produto:mode==='campanha'?lastProduto:'',autor:autorAtual()});
   if(storeMode==='local'){
     var now=new Date().toISOString(),ix=currentId?saved.findIndex(function(x){return x.id===currentId;}):-1;
     var info=[item.titulo,item.prazo].filter(Boolean).join(' · ');
@@ -1152,7 +1537,8 @@ function doSave(manual,force){
     }else if(r.status===409){
       conflict=r.data.item;
       setStatusHTML('<b>Outra pessoa alterou esta campanha</b>'+(conflict.autor?' ('+esc(conflict.autor)+')':'')+' às '+hhmm(conflict.updatedAt)+'. <button type="button" class="btn ghost small" data-act="theirs">Ver a versão dela</button> <button type="button" class="btn ghost small" data-act="mine">Salvar a minha por cima</button>','bad');
-    }else if(r.status===401){needPassword();}
+    }else if(r.status===401){needLogin();}
+    else if(r.status===403){showChange(true);}
     else if(r.status===404){currentId=null;currentRev=0;setStatus('Esta campanha foi removida por outra pessoa. Use Salvar agora para criá-la de novo.','warn');refresh();}
     else setStatus('Não foi possível salvar agora. Vamos tentar de novo na próxima edição.','bad');
   },function(){setStatus('Sem conexão. Não foi possível salvar.','bad');});
@@ -1178,17 +1564,20 @@ function copyText(t,btn){
 /* ---------- update ---------- */
 function update(){
   if(mode==='historico'){renderHist();return;}
-  if(mode==='campanha')renderCamp();else if(mode==='projeto')renderProj();else renderUrg();
+  if(mode==='andamento'){renderAnd();return;}
+  if(mode==='config')return;
+  if(mode==='campanha')renderCamp();else renderProj();
   scheduleSave();
 }
 function setMode(m){
   mode=m;
-  ['campanha','projeto','urgencia','historico'].forEach(function(k){
+  ['campanha','projeto','andamento','historico','config'].forEach(function(k){
     $('f-'+k).hidden=k!==m;
     $('m-'+k).setAttribute('aria-selected',k===m?'true':'false');
   });
   $('brief-card').hidden=m!=='campanha';
-  document.body.classList.toggle('hist',m==='historico');
+  document.body.classList.toggle('hist',['andamento','historico','config'].indexOf(m)>=0);
+  if(m==='config')loadUsers();
   update();
 }
 function resetAll(){
@@ -1200,7 +1589,7 @@ function resetAll(){
   $('c-nome').value='';$('c-pedida').value='';$('c-doc').value='pronta';$('c-seg').value='pronta';
   $('f-campanha').querySelectorAll('textarea,input[type=text],input[type=date]').forEach(function(e){e.value='';});
   $('c-solic').value=iso(new Date());$('c-docdias').value='2';$('c-segdias').value='3';
-  $('c-status').value='planejamento';$('c-frente').selectedIndex=0;$('c-real-w').hidden=true;
+  $('c-status').value='planejamento';$('c-frente').selectedIndex=0;$('c-real-w').hidden=true;$('c-resp').selectedIndex=0;$('c-aprov').selectedIndex=0;
   clearTimeout(saveTimer);currentId=null;currentRev=0;savedSig='';conflict=null;setHash('');
   if(storeMode==='server')setStatus(protectedApp?'Salvamento compartilhado ativo.':'Salvamento compartilhado ativo, mas sem senha: qualquer pessoa com o link pode ver e editar.',protectedApp?'ok':'warn');
   renderSaved();
@@ -1213,7 +1602,7 @@ document.addEventListener('click',function(e){
     var o=$(b.dataset.step),mn=b.dataset.min?+b.dataset.min:0;
     o.textContent=Math.min(+b.dataset.max,Math.max(mn,+o.textContent+(+b.dataset.d)));update();return;
   }
-  if(b.dataset.mode){setMode(b.dataset.mode);return;}
+  if(b.dataset.mode){if(b.dataset.mode==='config'&&!(me&&me.role==='admin'))return;setMode(b.dataset.mode);return;}
   if(b.dataset.b){briefAuto=false;briefSel=b.dataset.b;renderBrief();return;}
   if(b.id==='btn-auto'){briefAuto=true;update();return;}
   if(b.id==='btn-limpar'){resetAll();return;}
@@ -1223,6 +1612,8 @@ document.addEventListener('click',function(e){
     copyText('BRIEFING PARA PRODUTO ('+briefSel.toUpperCase()+')\nCampanha: '+(($('c-nome').value.trim())||'____')+'\n\n'+f.map(function(r){return r[0]+': ____\n   ('+r[1]+')';}).join('\n'),b);return;
   }
   if(b.dataset.s){sumSel=b.dataset.s;update();return;}
+  if(b.id==='btn-limpar-proj'){resetProj();return;}
+  if(b.id==='btn-psumcopy'){var sp=sumSel==='produto'?'interno':sumSel;copyText(sp==='trello'?trelloAll:(sp==='contexto'?lastContexto:lastResumo),b);return;}
   if(b.id==='btn-sumcopy'){copyText(sumSel==='produto'?lastProduto:(sumSel==='trello'?trelloAll:(sumSel==='contexto'?lastContexto:lastResumo)),b);return;}
   if(b.dataset.cp!==undefined){copyText(trelloParts[+b.dataset.cp]||'',b);return;}
   if(b.id==='btn-csv'){copyText(histTSV(),b);return;}
@@ -1230,7 +1621,15 @@ document.addEventListener('click',function(e){
   if(b.dataset.act==='unarch'){archiveItem(b.dataset.id,false);return;}
   if(b.id==='btn-salvar'){doSave(true,false).then(function(){flash(b,'Salva');});return;}
   if(b.id==='btn-refresh'){refresh();flash(b,'Atualizada');return;}
-  if(b.id==='btn-pw'){pwTried=true;lsSet(PKEY,$('pw').value);initStore();return;}
+  if(b.id==='btn-login'){doLogin();return;}
+  if(b.id==='btn-sair'){doLogout();return;}
+  if(b.id==='btn-senha'){showChange(false);return;}
+  if(b.id==='btn-chg-save'){doChange();return;}
+  if(b.id==='btn-chg-cancel'){$('gate').hidden=true;return;}
+  if(b.id==='btn-ucriar'){createUser();return;}
+  if(b.dataset.ua){userAction(b.dataset.ua,b.dataset.u);return;}
+  if(b.dataset.copysec){copyText(b.dataset.copysec,b);return;}
+  if(b.dataset.act==='pub'){marcarPublicada(b.dataset.id);return;}
   if(b.dataset.act==='theirs'&&conflict){var c=conflict;upsert(c);unsnap(c.k,c.estado);currentId=c.id;currentRev=c.rev;conflict=null;setMode(c.k);savedSig=JSON.stringify(snap(mode));setStatus('Mostrando a versão mais recente, de '+(c.autor||'outra pessoa')+'.','ok');renderSaved();return;}
   if(b.dataset.act==='mine'){doSave(true,true);return;}
   if(b.dataset.act==='del'){
@@ -1241,16 +1640,26 @@ document.addEventListener('click',function(e){
   if(b.dataset.act==='link'){copyText(location.origin+location.pathname+'#c='+b.dataset.id,b);return;}
   if(b.dataset.act==='copy'){var it=findItem(b.dataset.id);if(it)copyText(it.resumo,b);return;}
 });
-document.addEventListener('input',function(e){var i=e.target.id;if(i==='autor'){lsSet(AKEY,e.target.value);return;}if(i==='fb'||i==='pw')return;update();});
-document.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.id==='pw'){$('btn-pw').click();}});
+document.addEventListener('input',function(e){if(e.target.dataset&&e.target.dataset.and!==undefined)return;var i=e.target.id||'';if(i==='autor'){lsSet(AKEY,e.target.value);update();return;}if(/^(fb|lg-|chg-|nu-)/.test(i))return;update();});
+document.addEventListener('keydown',function(e){var i=e.target.id;if(e.key!=='Enter')return;if(i==='lg-user'||i==='lg-pass')doLogin();else if(i==='chg-conf')doChange();});
 window.addEventListener('focus',function(){refresh();});
 window.addEventListener('hashchange',function(){if(storeMode==='server'||storeMode==='local')openFromHash();});
-document.addEventListener('change',function(e){var t=e.target;if(t.id==='fb'||t.id==='pw'||t.id==='autor')return;if(t.tagName==='TEXTAREA'||['text','number','date'].indexOf(t.type)>=0)return;update();});
+document.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.dataset&&t.dataset.and!==undefined){toggleAnd(t.dataset.and,+t.dataset.i,t.checked);return;}
+  var i=t.id||'';
+  if(/^(fb|lg-|chg-|nu-)/.test(i))return;
+  if(i==='autor'){lsSet(AKEY,t.value);}
+  if(t.tagName==='TEXTAREA'||['text','number','date','password'].indexOf(t.type)>=0)return;
+  update();
+});
 
 buildCanais();buildAbr();buildDeps();buildRules();
 $('c-solic').value=iso(new Date());$('p-inicio').value=iso(new Date());
 $('c-artigos').textContent=String(INI.artigos);
-$('autor').value=lsGet(AKEY)||'';
+buildSelects();
+var av=lsGet(AKEY)||'';$('autor').value=PESSOAS.autor.indexOf(av)>=0?av:'';
+$('p-inicio').value=iso(new Date());
 renderSaved();
 setMode('campanha');
 initStore();
