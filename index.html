@@ -1539,8 +1539,8 @@ function scheduleSave(){
 }
 function doSave(manual,force){
   clearTimeout(saveTimer);
-  if(!lastSave||(storeMode!=='server'&&storeMode!=='local'))return Promise.resolve();
-  if(!autorAtual()){setStatus('Escolha quem está criando, no topo da página, para salvar.','warn');return Promise.resolve();}
+  if(!lastSave||(storeMode!=='server'&&storeMode!=='local'))return Promise.resolve(false);
+  if(!autorAtual()){setStatus('Escolha quem está criando, no topo da página, para salvar.','warn');return Promise.resolve(false);}
   var est=snap(mode),sig=JSON.stringify(est);
   if(!manual&&sig===savedSig)return Promise.resolve();
   var item=Object.assign({},lastSave,{estado:est,k:mode,produto:mode==='campanha'?lastProduto:'',autor:autorAtual()});
@@ -1550,13 +1550,14 @@ function doSave(manual,force){
     if(ix>=0){var rv=(saved[ix].rev||0)+1;saved[ix]=Object.assign({},saved[ix],item,{updatedAt:now,rev:rv,log:pushLog(saved[ix].log,{rev:rv,at:now,autor:item.autor,acao:'editou',info:info})});currentRev=rv;}
     else{var nw=Object.assign({},item,{id:Date.now().toString(36),rev:1,createdAt:now,updatedAt:now,log:[{rev:1,at:now,autor:item.autor,acao:'criou',info:info}]});saved.unshift(nw);currentId=nw.id;currentRev=1;}
     saved.sort(function(a,b){return String(b.updatedAt).localeCompare(String(a.updatedAt));});
-    localPut();savedSig=sig;setStatus('Salva neste navegador às '+hhmm(now)+'.','ok');setHash(currentId);renderSaved();return Promise.resolve();
+    localPut();savedSig=sig;setStatus('Salva neste navegador às '+hhmm(now)+'.','ok');setHash(currentId);renderSaved();return Promise.resolve(true);
   }
   var p=currentId?api('PUT',currentId,Object.assign({},item,{rev:currentRev,force:!!force})):api('POST',null,item);
   return p.then(function(r){
     if(r.status===200||r.status===201){
       var it=r.data.item;upsert(it);currentId=it.id;currentRev=it.rev;savedSig=sig;conflict=null;
       setStatus('Salva às '+hhmm(it.updatedAt)+'.','ok');setHash(it.id);renderSaved();
+      return true;
     }else if(r.status===409){
       conflict=r.data.item;
       setStatusHTML('<b>Outra pessoa alterou esta campanha</b>'+(conflict.autor?' ('+esc(conflict.autor)+')':'')+' às '+hhmm(conflict.updatedAt)+'. <button type="button" class="btn ghost small" data-act="theirs">Ver a versão dela</button> <button type="button" class="btn ghost small" data-act="mine">Salvar a minha por cima</button>','bad');
@@ -1564,7 +1565,8 @@ function doSave(manual,force){
     else if(r.status===403){showChange(true);}
     else if(r.status===404){currentId=null;currentRev=0;setStatus('Esta campanha foi removida por outra pessoa. Use Salvar agora para criá-la de novo.','warn');refresh();}
     else setStatus('Não foi possível salvar agora. Vamos tentar de novo na próxima edição.','bad');
-  },function(){setStatus('Sem conexão. Não foi possível salvar.','bad');});
+    return false;
+  },function(){setStatus('Sem conexão. Não foi possível salvar.','bad');return false;});
 }
 function removeItem(id){
   var done=function(){
@@ -1642,7 +1644,7 @@ document.addEventListener('click',function(e){
   if(b.id==='btn-csv'){copyText(histTSV(),b);return;}
   if(b.dataset.act==='arch'){archiveItem(b.dataset.id,true);return;}
   if(b.dataset.act==='unarch'){archiveItem(b.dataset.id,false);return;}
-  if(b.id==='btn-salvar'){doSave(true,false).then(function(){flash(b,'Salva');});return;}
+  if(b.id==='btn-salvar'){var savedMode=mode;doSave(true,false).then(function(ok){flash(b,ok?'Salva':'Erro');if(ok){if(savedMode==='projeto')resetProj();else resetAll();setMode('andamento');setStatus('Campanha salva. Acompanhe em Andamento; os campos foram limpos para a próxima.','ok');}});return;}
   if(b.id==='btn-refresh'){refresh();flash(b,'Atualizada');return;}
   if(b.id==='btn-login'){doLogin();return;}
   if(b.id==='btn-sair'){doLogout();return;}
