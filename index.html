@@ -15,6 +15,7 @@
   --accent:#fecf43; --accent-hover:#e49d21; --on-accent:#252627; --accent-soft:#fff2bf; --accent-text:#8c3210;
   --sel-bg:#252627; --sel-ink:#fecf43; --focus:#252627;
   --ok:#1f6b45; --ok-soft:#dff0e6; --warn:#8c3210; --warn-soft:#fde5d3; --bad:#b3261e; --bad-soft:#fadcd9;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
   --hd:#252627; --hd-ink:#f4f4f2; --hd-muted:#b9bbbd; --hd-grid:rgba(254,207,67,.09);
   --sans:'Poppins',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   --code:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -26,6 +27,7 @@
     --line:#3a3c3d; --line-strong:#505253;
     --accent-soft:#3a3320; --accent-text:#fecf43; --sel-bg:#fecf43; --sel-ink:#252627; --focus:#fecf43;
     --ok:#6fcf97; --ok-soft:#1d3327; --warn:#f0a96b; --warn-soft:#3d2a1b; --bad:#f28b82; --bad-soft:#3f2321;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70;
     --hd:#252627; --hd-grid:rgba(254,207,67,.07);
   }
 }
@@ -35,6 +37,7 @@
   --line:#3a3c3d; --line-strong:#505253;
   --accent-soft:#3a3320; --accent-text:#fecf43; --sel-bg:#fecf43; --sel-ink:#252627; --focus:#fecf43;
   --ok:#6fcf97; --ok-soft:#1d3327; --warn:#f0a96b; --warn-soft:#3d2a1b; --bad:#f28b82; --bad-soft:#3f2321;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70;
   --hd:#252627; --hd-grid:rgba(254,207,67,.07);
 }
 *{box-sizing:border-box}
@@ -155,6 +158,14 @@ body.locked .grid,body.locked .modes,body.locked .who{display:none}
 .stat{border:1px solid var(--line);border-radius:4px;padding:10px 12px;background:var(--surface2)}
 .stat b{display:block;font-size:24px;font-weight:700;line-height:1.1}
 .stat span{font-size:12px;color:var(--muted);font-weight:300}
+.chartwrap{overflow-x:auto}
+.chart-svg{display:block;width:100%;height:auto;min-width:380px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.meter-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.meter-row b{font-size:30px;font-weight:700;line-height:1}
+.meter-track{height:14px;border-radius:7px;background:var(--surface2);border:1px solid var(--line);overflow:hidden}
+.meter-fill{height:100%;border-radius:7px 0 0 7px;transition:width .2s}
 .filters{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end;margin:10px 0 6px}
 .filters label.chk{display:flex;gap:8px;align-items:center;font-size:13px;padding-bottom:9px}
 .st{font-size:12px;font-weight:600;border-radius:3px;padding:2px 8px;white-space:nowrap;background:var(--surface2);border:1px solid var(--line-strong)}
@@ -472,6 +483,16 @@ body.hist .grid{grid-template-columns:minmax(0,1fr)}
           <div class="blk-h"><h2>Painel</h2></div>
           <p class="hint">Tudo o que já passou pela calculadora, guardado em um só lugar.</p>
           <div class="stats" id="h-stats"></div>
+        </div>
+        <div class="card">
+          <div class="blk-h"><h2>Demandas por mês e por porte</h2></div>
+          <p class="hint">Quantas campanhas entraram a cada mês, pelo porte calculado. Passe o mouse em cima de uma barra para ver os números.</p>
+          <div class="chartwrap" id="h-chart-meses"></div>
+        </div>
+        <div class="card">
+          <div class="blk-h"><h2>Entregas no prazo</h2></div>
+          <p class="hint">Entre as campanhas já publicadas, quantas passaram do prazo que a calculadora previu.</p>
+          <div id="h-meter"></div>
         </div>
         <div class="card">
           <div class="blk-h"><h2>Campanhas, projetos e urgências</h2><button type="button" class="btn ghost small" id="btn-csv">Copiar para planilha</button></div>
@@ -1452,15 +1473,83 @@ function histFiltrados(){
   });
 }
 function media(a){return a.length?Math.round(a.reduce(function(x,y){return x+y;},0)/a.length*10)/10:null;}
+var PORTE_SLOT={'Pequena':'--s1','Média':'--s2','Grande':'--s3'};
+function monthKey(iso){return iso?String(iso).slice(0,7):null;}
+function monthLabel(key){
+  var meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  var p=key.split('-');return meses[+p[1]-1]+'/'+p[0].slice(2);
+}
+function last6Meses(){
+  var now=new Date(),arr=[];
+  for(var i=5;i>=0;i--){var d=new Date(now.getFullYear(),now.getMonth()-i,1);arr.push(d.getFullYear()+'-'+z2(d.getMonth()+1));}
+  return arr;
+}
+function chartMeses(camp){
+  var meses=last6Meses();
+  var byMes={};meses.forEach(function(m){byMes[m]={'Pequena':0,'Média':0,'Grande':0};});
+  var total=0;
+  camp.forEach(function(it){
+    if(!it.createdAt||!it.porte)return;
+    var mk=monthKey(it.createdAt);
+    if(byMes[mk]&&byMes[mk][it.porte]!=null){byMes[mk][it.porte]++;total++;}
+  });
+  if(!total)return '<p class="hint" style="margin:0">Ainda não há campanhas suficientes para o gráfico. Elas aparecem aqui assim que forem criadas.</p>';
+  var totals=meses.map(function(m){var b=byMes[m];return b.Pequena+b.Média+b.Grande;});
+  var maxV=totals.reduce(function(a,b){return Math.max(a,b);},0);
+  var step=maxV<=5?1:(maxV<=10?2:(maxV<=20?5:10));
+  var top=Math.max(step,Math.ceil(maxV/step)*step);
+  var W=560,H=210,padL=26,padB=26,padT=14,plotW=W-padL-10,plotH=H-padT-padB,baseY=padT+plotH;
+  var n=meses.length,slot=plotW/n,barW=Math.min(24,slot*0.5);
+  var svg='<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Demandas por mês e por porte">';
+  [0,top/2,top].forEach(function(v){
+    var y=baseY-(v/top)*plotH;
+    svg+='<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-10)+'" y2="'+y.toFixed(1)+'" style="stroke:var(--line);stroke-width:1"/>';
+    svg+='<text x="'+(padL-6)+'" y="'+(y+3).toFixed(1)+'" text-anchor="end" font-size="10" style="fill:var(--muted)">'+Math.round(v)+'</text>';
+  });
+  meses.forEach(function(m,i){
+    var b=byMes[m],cx=padL+slot*i+slot/2,x=cx-barW/2;
+    var ordem=[['Pequena',b.Pequena],['Média',b.Média],['Grande',b.Grande]];
+    var drawn=ordem.filter(function(o){return o[1]>0;});
+    var acc=0;
+    drawn.forEach(function(o,di){
+      var y0=baseY-(acc/top)*plotH;
+      acc+=o[1];
+      var y1=baseY-(acc/top)*plotH;
+      var insetTop=di<drawn.length-1?1:0,insetBottom=di>0?1:0;
+      var y=y1+insetTop,h=Math.max(1,(y0-insetBottom)-(y1+insetTop));
+      svg+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" style="fill:var('+PORTE_SLOT[o[0]]+')"><title>'+monthLabel(m)+' · '+o[0]+': '+o[1]+'</title></rect>';
+    });
+    if(totals[i]>0){
+      var yTop=baseY-(totals[i]/top)*plotH;
+      svg+='<text x="'+cx.toFixed(1)+'" y="'+(yTop-5).toFixed(1)+'" text-anchor="middle" font-size="11" font-weight="600" style="fill:var(--ink)">'+totals[i]+'</text>';
+    }
+    svg+='<text x="'+cx.toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" style="fill:var(--muted)">'+monthLabel(m)+'</text>';
+  });
+  svg+='</svg>';
+  var legend='<div class="legend">'+['Pequena','Média','Grande'].map(function(pt){return '<span><i style="background:var('+PORTE_SLOT[pt]+')"></i>'+pt+'</span>';}).join('')+'</div>';
+  return svg+legend;
+}
+function prazoMeter(camp){
+  var pubs=camp.filter(function(x){return x.status==='publicada'&&x.diasReais!=null&&x.prevHi!=null;});
+  if(!pubs.length)return '<p class="hint" style="margin:0">Marque campanhas como publicadas, com a data real preenchida, para calcular este indicador.</p>';
+  var atrasadas=pubs.filter(function(x){return x.diasReais>x.prevHi;}).length;
+  var pct=Math.round(atrasadas/pubs.length*100);
+  var sev=pct<=20?'var(--ok)':(pct<=50?'var(--warn)':'var(--bad)');
+  var sevTxt=pct<=20?'Dentro do esperado':(pct<=50?'Atenção':'Fora do esperado');
+  return '<div class="meter-row"><b style="color:'+sev+'">'+pct+'%</b><span class="hint" style="margin:0">'+sevTxt+' · '+atrasadas+' de '+pubs.length+' campanhas publicadas passaram do prazo previsto</span></div>'
+    +'<div class="meter-track"><div class="meter-fill" style="width:'+pct+'%;background:'+sev+'"></div></div>';
+}
 function renderHist(){
-  if(storeMode==='pending'){$('h-stats').innerHTML='';$('h-t').innerHTML='<tr><td>Carregando...</td></tr>';$('h-log').innerHTML='';return;}
-  if(storeMode==='auth'){$('h-stats').innerHTML='';$('h-t').innerHTML='<tr><td>Entre para ver o histórico.</td></tr>';$('h-log').innerHTML='';return;}
+  if(storeMode==='pending'){$('h-stats').innerHTML='';$('h-chart-meses').innerHTML='';$('h-meter').innerHTML='';$('h-t').innerHTML='<tr><td>Carregando...</td></tr>';$('h-log').innerHTML='';return;}
+  if(storeMode==='auth'){$('h-stats').innerHTML='';$('h-chart-meses').innerHTML='';$('h-meter').innerHTML='';$('h-t').innerHTML='<tr><td>Entre para ver o histórico.</td></tr>';$('h-log').innerHTML='';return;}
   var ativos=saved.filter(function(x){return !x.arquivada;});
   var camp=ativos.filter(function(x){return x.k==='campanha';});
   var pubs=camp.filter(function(x){return x.status==='publicada'&&x.diasReais!=null&&x.prevHi!=null;});
   var mr=media(pubs.map(function(x){return x.diasReais;})),mp=media(pubs.map(function(x){return x.prevHi;}));
   var tiles=[[ativos.length,'itens no histórico'],[camp.filter(function(x){return x.status==='publicada';}).length,'campanhas publicadas'],[camp.filter(function(x){return x.status==='producao';}).length,'em produção'],[camp.filter(function(x){return !x.status||x.status==='planejamento';}).length,'em planejamento'],[mr===null?'—':mr,mr===null?'prazo real médio (marque campanhas como publicadas)':'dias úteis reais em média, contra '+mp+' previstos']];
   $('h-stats').innerHTML=tiles.map(function(t){return '<div class="stat"><b>'+t[0]+'</b><span>'+esc(t[1])+'</span></div>';}).join('');
+  $('h-chart-meses').innerHTML=chartMeses(camp);
+  $('h-meter').innerHTML=prazoMeter(camp);
   var rows=histFiltrados();
   var hd='<tr><th>Nome</th><th>Tipo</th><th>Status</th><th>Previsto</th><th>Real</th><th>Atualizada</th><th></th></tr>';
   if(!rows.length){$('h-t').innerHTML=hd+'<tr><td colspan="7">Nenhum item encontrado. Preencha uma campanha com nome para ela aparecer aqui.</td></tr>';}
