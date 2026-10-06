@@ -1,45 +1,64 @@
 # Calculadora de Campanhas
 
-Página única (`index.html`) com uma API (`api/campanhas.js`) que guarda as campanhas num Redis.
-Quem tiver o link e a senha vê e edita as mesmas campanhas.
+Página única (`index.html`) com uma API na pasta `api/` que guarda campanhas, projetos e usuários num Redis.
+Cada pessoa entra com o próprio usuário e senha.
 
-## Publicar no Vercel
+## Arquivos
 
-1. Coloque esta pasta num repositório do GitHub e importe no Vercel (Add New, Project). Framework: Other.
-   Alternativa: dentro da pasta, rode `npx vercel`.
-2. No projeto, abra **Storage**, escolha **Upstash for Redis** no Marketplace, crie o banco (o plano gratuito basta)
-   e conecte ao projeto. O Vercel cria as variáveis de ambiente sozinho.
-3. Em **Settings, Environment Variables**, confira se existem `KV_REST_API_URL` e `KV_REST_API_TOKEN`
-   (ou `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN`). A API aceita os dois pares.
-4. Ainda em Environment Variables, crie `APP_PASSWORD` com a senha da equipe.
-5. Faça um novo deploy (Deployments, menu do último deploy, Redeploy). Variáveis só valem em deploys novos.
-6. Abra o site. A barra no topo deve dizer "Salvamento compartilhado ativo."
+- `index.html`: a página.
+- `api/campanhas.js`: campanhas, projetos e andamento.
+- `api/auth.js`: login, logout e troca de senha.
+- `api/usuarios.js`: administração de usuários (só administradores).
+- `api/_lib.js`: utilidades compartilhadas (o `_` no nome é proposital).
 
-## Como funciona
+Todos ficam no repositório com `index.html` na raiz e os quatro arquivos dentro da pasta `api`.
 
-- A aba **Histórico** guarda tudo o que passou pela calculadora: campanhas, projetos e urgências, com status,
-  prazo previsto x real, quem editou e quando. Itens arquivados saem da lista, mas continuam guardados e podem ser
-  restaurados. "Excluir de vez" só aparece para itens arquivados. "Copiar para planilha" cola direto no Google Sheets ou Excel.
-- Cada campanha gera o resumo interno, a mensagem para Produto, os cards do Trello (principal e do Design) e o
-  contexto para colar numa conversa com o Claude.
-- A campanha é salva sozinha assim que tem nome, e a cada edição.
-- Cada campanha tem link próprio (botão "Copiar link"). Quem abrir o link entra direto nela.
-- Se duas pessoas editarem a mesma campanha, a segunda a salvar vê um aviso e escolhe entre ver a versão da outra
-  pessoa ou salvar a sua por cima.
-- Remover pede uma segunda confirmação no botão.
-- No navegador ficam guardados só a senha e o nome de quem edita. As campanhas ficam no Redis.
+## Configurar no Vercel
+
+1. **Banco:** em Storage, conecte o Upstash for Redis ao projeto. O Vercel cria as variáveis
+   `KV_REST_API_URL` e `KV_REST_API_TOKEN` (a API aceita também `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN`).
+2. **`SESSION_SECRET`:** em Settings, Environment Variables, crie esta variável com um texto longo e aleatório
+   (40 caracteres ou mais, misture letras, números e símbolos). Ela assina os logins. Não compartilhe.
+3. **`APP_PASSWORD`:** a senha do primeiro acesso, explicada abaixo. Ela já existe se você a criou antes.
+4. Faça um Redeploy, porque variáveis só valem em deploys novos.
+
+## Primeiro acesso
+
+1. Abra o site e entre com o usuário `admin` e a senha que está em `APP_PASSWORD`.
+2. O sistema pede uma senha nova na hora. Depois disso, o `APP_PASSWORD` deixa de funcionar como login.
+3. Abra **Configurações** (só administradores veem), crie seu usuário pessoal com perfil Administrador e o dos colegas.
+4. Entre com o seu usuário novo e desative o usuário `admin`.
+
+## Usuários
+
+- Criar: informe usuário (letras minúsculas, números, ponto ou hífen), nome completo e perfil. Se deixar a senha
+  em branco, o sistema gera uma. A senha temporária aparece uma única vez, para você enviar à pessoa.
+- Quem entra com senha temporária troca por outra no primeiro acesso.
+- Redefinir senha: gera outra temporária e derruba os logins anteriores da pessoa.
+- Desativar: a pessoa perde o acesso na hora, e o histórico continua com o nome dela.
+- Perfis: **Administrador** gerencia usuários e exclui itens de vez. **Usuário** cria, edita, arquiva e marca andamento.
+- O nome que aparece como criador e autor das edições vem do login, não pode ser escolhido pela pessoa.
 
 ## Segurança
 
-- Sem `APP_PASSWORD`, qualquer pessoa com o link pode ver e editar. A página avisa isso na barra do topo.
-- A senha é uma só para a equipe toda. Para trocar, mude a variável e faça um novo deploy.
-- O Vercel também tem proteção de deploy nas configurações do projeto, que pode ser usada junto com a senha.
+- Senhas guardadas com scrypt e sal individual. Nenhuma senha é salva em texto.
+- Login por cookie assinado (HttpOnly, SameSite, 7 dias). Requisições que alteram dados exigem cabeçalho próprio.
+- Bloqueio de 15 minutos após 5 tentativas erradas para o mesmo usuário e endereço.
+- Sempre sirva o site por HTTPS (o Vercel já faz isso).
 
-## Sem o banco
+## Como funciona
 
-Se a API ou o banco não estiverem configurados, a página funciona em modo local: salva só no navegador de quem usa,
-e avisa isso na barra do topo.
+- A aba **Andamento** lista campanhas e projetos com um checklist gerado pela calculadora. Cada marcação guarda quem
+  marcou e quando. "Marcar como publicada hoje" atualiza o status e a data real no histórico.
+- A aba **Histórico** guarda tudo, com previsto x real, arquivamento e atividade recente.
+- Cada campanha gera o resumo interno, a mensagem para Produto, os cards do Trello e o contexto para o Claude.
 
-## Ajustar regras
+## Sem o servidor
 
-Faixas de pontos, prazos e campos de briefing ficam no objeto `CFG` e na constante `BRIEF`, no início do script de `index.html`.
+Sem a API, o banco ou o `SESSION_SECRET`, a página funciona em modo local: salva só no navegador de quem usa e avisa
+isso na barra do topo.
+
+## Ajustar regras e listas
+
+Faixas de pontos, prazos, briefings e as listas de pessoas ficam no início do script de `index.html`
+(`CFG`, `BRIEF`, `PESSOAS` e `PROJ`).
