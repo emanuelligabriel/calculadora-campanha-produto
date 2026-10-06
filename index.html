@@ -162,6 +162,11 @@ body.locked .grid,body.locked .modes,body.locked .who{display:none}
 .chart-svg{display:block;width:100%;height:auto;min-width:380px}
 .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:999;padding:16px}
+.modal-box{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px;max-width:400px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.modal-box h3{margin:0 0 8px;font-size:15px}
+.modal-box p{margin:0 0 12px;color:var(--muted)}
+.modal-box .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 .meter-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
 .meter-row b{font-size:30px;font-weight:700;line-height:1}
 .meter-track{height:14px;border-radius:7px;background:var(--surface2);border:1px solid var(--line);overflow:hidden}
@@ -224,7 +229,8 @@ body.hist .grid{grid-template-columns:minmax(0,1fr)}
     </div>
   </header>
 
-  <div class="card" id="gate" hidden>
+  <div class="modal-ov" id="modal-ov" hidden><div class="modal-box" id="modal-box" role="dialog" aria-modal="true"></div></div>
+      <div class="card" id="gate" hidden>
     <div id="gate-login">
       <div class="blk-h"><h2>Entrar</h2></div>
       <p class="hint">Use o usuário e a senha que o administrador criou para você.</p>
@@ -277,7 +283,10 @@ body.hist .grid{grid-template-columns:minmax(0,1fr)}
               <div class="field"><span>Frente no Trello</span><select id="c-frente"><option>Novidades do Sistema</option><option>Campanha</option><option>Central de Ajuda</option><option>Conteúdo</option></select></div>
               <div class="field"><span>Status</span><select id="c-status"><option value="planejamento">Em planejamento</option><option value="producao">Em produção</option><option value="publicada">Publicada</option><option value="cancelada">Cancelada</option></select></div>
             </div>
+            <div class="field" id="c-prevpub-w" hidden><span>Previsão de publicação</span><input type="date" id="c-prevpub"><small>Data esperada do primeiro envio/comunicação, enquanto ainda não foi publicada.</small></div>
             <div class="field" id="c-real-w" hidden><span>Publicada em (data real)</span><input type="date" id="c-real"><small>Vai para o histórico e serve para comparar o prazo real com o previsto.</small></div>
+            <div class="field" id="c-atraso-w" hidden><span>Quem atrasou?</span><select id="c-atraso-motivo"><option value="">Não informado</option><option value="produto">Produto</option><option value="desenvolvimento">Desenvolvimento</option><option value="marketing">Marketing</option><option value="outro">Outro</option></select><small>A entrega real passou do prazo previsto. Fica no histórico para identificar onde os atrasos mais acontecem.</small></div>
+            <div class="field" id="c-atraso-obs-w" hidden><span>Detalhe do atraso</span><input type="text" id="c-atraso-obs" placeholder="Em poucas palavras, o que aconteceu" autocomplete="off"></div>
             <div class="field"><span>O que muda</span><textarea id="c-desc" placeholder="Em poucas linhas: o que é a melhoria e o problema que ela resolve"></textarea></div>
             <div class="field"><span>Mensagem principal</span><input type="text" id="c-msg" placeholder="O que o cliente precisa saber, em uma frase" autocomplete="off"></div>
             <div class="f2">
@@ -993,6 +1002,10 @@ function renderCamp(){
   var realD=statusSel==='publicada'?parseD($('c-real').value):null;
   var diasReais=(realD&&realD>=start)?bdDiff(start,realD):null;
   var realHtml=realD?'<div><span>Publicada em:</span> '+fmt(realD)+(diasReais!==null?' ('+dias(diasReais)+' de trabalho, previsto '+rng(p.total)+')':'')+'</div>':'';
+  $('c-prevpub-w').hidden=statusSel==='publicada';
+  var atrasou=diasReais!==null&&diasReais>p.total[1];
+  $('c-atraso-w').hidden=!atrasou;
+  $('c-atraso-obs-w').hidden=!(atrasou&&$('c-atraso-motivo').value==='outro');
   var parts='';
   if(p.estudo[1]>0)parts+='<li><span>Estudo da melhoria</span><b>'+rng2(p.estudo)+'</b></li>';
   parts+='<li><span>Produção <small>(trilha crítica: '+p.crit+')</small></span><b>'+rng2(p.prod)+'</b></li>';
@@ -1102,7 +1115,7 @@ function renderCamp(){
   var bc=$('btn-sumcopy');if(!bc.dataset.busy)bc.textContent=lbls[sumSel];
   Array.prototype.forEach.call($('sum-seg').querySelectorAll('button'),function(x){x.setAttribute('aria-pressed',x.dataset.s===sumSel?'true':'false');});
   lastSave={nome:s.nome||'Sem nome',modo:'Campanha',titulo:s.porte+' · '+s.soma+'/12',prazo:rng(p.total)+' dias úteis',entrega:entrega,resumo:lastResumo,
-    itens:campItens(ctx),porte:s.porte,soma:s.soma,status:statusSel,comunicacao:$('c-pedida').value,publicacaoReal:realD?$('c-real').value:'',prevLo:p.total[0],prevHi:p.total[1],diasReais:diasReais};
+    itens:campItens(ctx),porte:s.porte,soma:s.soma,status:statusSel,comunicacao:$('c-pedida').value,publicacaoReal:realD?$('c-real').value:'',prevPub:statusSel!=='publicada'?$('c-prevpub').value:'',prevLo:p.total[0],prevHi:p.total[1],diasReais:diasReais,atrasoMotivo:atrasou?$('c-atraso-motivo').value:'',atrasoObs:(atrasou&&$('c-atraso-motivo').value==='outro')?$('c-atraso-obs').value.trim():''};
   if(briefAuto)briefSel=s.porte;
   renderBrief();
 }
@@ -1424,7 +1437,7 @@ function cardAnd(it){
     +'<div style="display:flex;align-items:center;gap:10px"><div class="pbar" style="flex:1"><i style="width:'+pct+'%"></i></div><b>'+feitos+'/'+itens.length+'</b></div>'
     +'<div>'+lista+'</div>'
     +'<div class="btns"><button type="button" class="btn ghost small" data-act="open" data-id="'+esc(it.id)+'">Abrir</button>'
-    +(it.k==='campanha'&&st!=='publicada'?'<button type="button" class="btn small" data-act="pub" data-id="'+esc(it.id)+'">Marcar como publicada hoje</button>':'')
+    +(it.k==='campanha'&&st!=='publicada'?'<button type="button" class="btn small" data-act="pub" data-id="'+esc(it.id)+'">Marcar como publicada</button>':'')
     +'</div></div>';
 }
 function renderAnd(){
@@ -1454,11 +1467,58 @@ function toggleAnd(id,i,feito){
     },function(){desfazer('Sem conexão. A marcação não foi salva.');});
   }else localPut();
 }
-function marcarPublicada(id){
-  if(!openItem(id))return;
-  $('c-status').value='publicada';$('c-real').value=iso(new Date());
-  update();window.scrollTo(0,0);
+function showModal(html){$('modal-box').innerHTML=html;$('modal-ov').hidden=false;}
+function hideModal(){$('modal-ov').hidden=true;$('modal-box').innerHTML='';}
+function modalAsk(id,step){
+  var di=esc(id);
+  if(step==='q1'){
+    showModal('<h3>Marcar como publicada</h3><p>Foi publicada hoje?</p><div class="btns">'
+      +'<button type="button" class="btn" data-mact="q1-sim" data-id="'+di+'">Sim, hoje</button>'
+      +'<button type="button" class="btn ghost" data-mact="q1-nao" data-id="'+di+'">Não</button>'
+      +'<button type="button" class="btn ghost small" data-mact="cancel">Cancelar</button></div>');
+  }else if(step==='q2'){
+    showModal('<h3>Marcar como publicada</h3><p>Ela já foi publicada em outra data, ou ainda não foi publicada?</p><div class="btns">'
+      +'<button type="button" class="btn" data-mact="q2-ja" data-id="'+di+'">Já foi publicada</button>'
+      +'<button type="button" class="btn ghost" data-mact="q2-ainda" data-id="'+di+'">Ainda não foi publicada</button>'
+      +'<button type="button" class="btn ghost small" data-mact="cancel">Cancelar</button></div>');
+  }else if(step==='ja'){
+    showModal('<h3>Data real de publicação</h3><p>Em que dia ela foi publicada?</p>'
+      +'<div class="field"><input type="date" id="m-data" value="'+iso(new Date())+'" max="'+iso(new Date())+'"></div>'
+      +'<p class="al warn" id="m-err" hidden style="margin:8px 0 0">Informe a data.</p>'
+      +'<div class="btns"><button type="button" class="btn" data-mact="confirm-ja" data-id="'+di+'">Confirmar</button>'
+      +'<button type="button" class="btn ghost small" data-mact="cancel">Cancelar</button></div>');
+  }else if(step==='ainda'){
+    showModal('<h3>Previsão de publicação</h3><p>Quando ela deve ser publicada (primeiro envio ou comunicação)?</p>'
+      +'<div class="field"><input type="date" id="m-data"></div>'
+      +'<p class="al warn" id="m-err" hidden style="margin:8px 0 0">Informe a data prevista.</p>'
+      +'<div class="btns"><button type="button" class="btn" data-mact="confirm-ainda" data-id="'+di+'">Salvar previsão</button>'
+      +'<button type="button" class="btn ghost small" data-mact="cancel">Cancelar</button></div>');
+  }
 }
+function modalClick(act,id){
+  if(act==='cancel'){hideModal();return;}
+  if(act==='q1-sim'){
+    hideModal();if(!openItem(id))return;
+    $('c-status').value='publicada';$('c-real').value=iso(new Date());$('c-prevpub').value='';
+    update();window.scrollTo(0,0);setStatus('Marcada como publicada hoje.','ok');return;
+  }
+  if(act==='q1-nao'){modalAsk(id,'q2');return;}
+  if(act==='q2-ja'){modalAsk(id,'ja');return;}
+  if(act==='q2-ainda'){modalAsk(id,'ainda');return;}
+  if(act==='confirm-ja'){
+    var d=$('m-data').value;if(!d){$('m-err').hidden=false;return;}
+    hideModal();if(!openItem(id))return;
+    $('c-status').value='publicada';$('c-real').value=d;$('c-prevpub').value='';
+    update();window.scrollTo(0,0);setStatus('Marcada como publicada em '+fmt(parseD(d))+'.','ok');return;
+  }
+  if(act==='confirm-ainda'){
+    var d2=$('m-data').value;if(!d2){$('m-err').hidden=false;return;}
+    hideModal();if(!openItem(id))return;
+    $('c-prevpub').value=d2;
+    update();window.scrollTo(0,0);setStatus('Previsão de publicação registrada para '+fmt(parseD(d2))+'.','ok');return;
+  }
+}
+function marcarPublicada(id){modalAsk(id,'q1');}
 
 function renderSaved(){if(mode==='historico')renderHist();else if(mode==='andamento')renderAnd();}
 function tipoDe(it){return it.k==='campanha'?(it.porte||'Campanha'):(it.k==='projeto'?'Projeto':'Urgência (antigo)');}
@@ -1532,12 +1592,16 @@ function chartMeses(camp){
 function prazoMeter(camp){
   var pubs=camp.filter(function(x){return x.status==='publicada'&&x.diasReais!=null&&x.prevHi!=null;});
   if(!pubs.length)return '<p class="hint" style="margin:0">Marque campanhas como publicadas, com a data real preenchida, para calcular este indicador.</p>';
-  var atrasadas=pubs.filter(function(x){return x.diasReais>x.prevHi;}).length;
-  var pct=Math.round(atrasadas/pubs.length*100);
+  var atrasos=pubs.filter(function(x){return x.diasReais>x.prevHi;});
+  var pct=Math.round(atrasos.length/pubs.length*100);
   var sev=pct<=20?'var(--ok)':(pct<=50?'var(--warn)':'var(--bad)');
   var sevTxt=pct<=20?'Dentro do esperado':(pct<=50?'Atenção':'Fora do esperado');
-  return '<div class="meter-row"><b style="color:'+sev+'">'+pct+'%</b><span class="hint" style="margin:0">'+sevTxt+' · '+atrasadas+' de '+pubs.length+' campanhas publicadas passaram do prazo previsto</span></div>'
-    +'<div class="meter-track"><div class="meter-fill" style="width:'+pct+'%;background:'+sev+'"></div></div>';
+  var MOT={produto:'Produto',desenvolvimento:'Desenvolvimento',marketing:'Marketing',outro:'Outro'};
+  var porMotivo=atrasos.reduce(function(a,x){var k=x.atrasoMotivo||'nd';a[k]=(a[k]||0)+1;return a;},{});
+  var motivoTxt=Object.keys(porMotivo).map(function(k){return (MOT[k]||'Não informado')+': '+porMotivo[k];}).join(' · ');
+  return '<div class="meter-row"><b style="color:'+sev+'">'+pct+'%</b><span class="hint" style="margin:0">'+sevTxt+' · '+atrasos.length+' de '+pubs.length+' campanhas publicadas passaram do prazo previsto</span></div>'
+    +'<div class="meter-track"><div class="meter-fill" style="width:'+pct+'%;background:'+sev+'"></div></div>'
+    +(motivoTxt?'<p class="hint" style="margin:6px 0 0">Atrasos por motivo: '+esc(motivoTxt)+'</p>':'');
 }
 function renderHist(){
   if(storeMode==='pending'){$('h-stats').innerHTML='';$('h-chart-meses').innerHTML='';$('h-meter').innerHTML='';$('h-t').innerHTML='<tr><td>Carregando...</td></tr>';$('h-log').innerHTML='';return;}
@@ -1560,9 +1624,9 @@ function renderHist(){
       +(it.arquivada?'<button type="button" class="btn ghost small" data-act="unarch" data-id="'+esc(it.id)+'">Restaurar</button>'+(podeExcluir()?' <button type="button" class="btn ghost small" data-act="del" data-id="'+esc(it.id)+'">Excluir de vez</button>':''):'<button type="button" class="btn ghost small" data-act="arch" data-id="'+esc(it.id)+'">Arquivar</button>');
     return '<tr><td data-l="Nome"><b>'+esc(it.nome)+'</b>'+(it.arquivada?' <span class="tag">arquivada</span>':'')+(it.id===currentId?' <span class="tag">aberta</span>':'')+'<br><small>Criada por '+esc(it.criador||it.autor||'—')+'</small></td>'
       +'<td data-l="Tipo">'+esc(tipoDe(it))+(it.soma!=null?' · '+it.soma+'/12':'')+'</td>'
-      +'<td data-l="Status">'+(st?'<span class="st '+st+'">'+STL[st]+'</span>':'—')+'</td>'
+      +'<td data-l="Status">'+(st?'<span class="st '+st+'">'+STL[st]+'</span>':'—')+(st&&st!=='publicada'&&it.prevPub?'<br><small>Previsão: '+esc(fmt(parseD(it.prevPub)))+'</small>':'')+'</td>'
       +'<td data-l="Previsto">'+esc(it.prazo||'—')+'</td>'
-      +'<td data-l="Real">'+(it.diasReais!=null?dias(it.diasReais):'—')+'</td>'
+      +'<td data-l="Real">'+(it.diasReais!=null?dias(it.diasReais):'—')+(it.atrasoMotivo?'<br><small>Atraso: '+esc({produto:'Produto',desenvolvimento:'Desenvolvimento',marketing:'Marketing',outro:'Outro'}[it.atrasoMotivo]||it.atrasoMotivo)+(it.atrasoObs?' ('+esc(it.atrasoObs)+')':'')+'</small>':'')+'</td>'
       +'<td data-l="Atualizada">'+(it.updatedAt?dthm(it.updatedAt):'—')+(it.autor?'<br><small>'+esc(it.autor)+'</small>':'')+'</td>'
       +'<td>'+acoes+'</td></tr>';
   }).join('');
@@ -1573,8 +1637,9 @@ function renderHist(){
 }
 function histTSV(){
   var cl=function(v){return String(v==null?'':v).replace(/[\t\r\n]+/g,' ');};
-  var h=['Nome','Tipo','Pontos','Status','Prazo previsto','Dias úteis reais','Comunicação','Publicada em','Atualizada em','Autor','Arquivada'];
-  var r=histFiltrados().map(function(it){return [it.nome,tipoDe(it),it.soma,it.k==='campanha'?STL[it.status||'planejamento']:'',it.prazo,it.diasReais,it.comunicacao,it.publicacaoReal,it.updatedAt?dthm(it.updatedAt):'',it.autor,it.arquivada?'sim':''].map(cl).join('\t');});
+  var MOTL={produto:'Produto',desenvolvimento:'Desenvolvimento',marketing:'Marketing',outro:'Outro'};
+  var h=['Nome','Tipo','Pontos','Status','Prazo previsto','Dias úteis reais','Comunicação','Previsão de publicação','Publicada em','Motivo do atraso','Atualizada em','Autor','Arquivada'];
+  var r=histFiltrados().map(function(it){return [it.nome,tipoDe(it),it.soma,it.k==='campanha'?STL[it.status||'planejamento']:'',it.prazo,it.diasReais,it.comunicacao,it.prevPub,it.publicacaoReal,it.atrasoMotivo?(MOTL[it.atrasoMotivo]||it.atrasoMotivo)+(it.atrasoObs?' - '+it.atrasoObs:''):'',it.updatedAt?dthm(it.updatedAt):'',it.autor,it.arquivada?'sim':''].map(cl).join('\t');});
   return [h.join('\t')].concat(r).join('\n');
 }
 function archiveItem(id,flag){
@@ -1703,7 +1768,7 @@ function resetAll(){
   $('c-nome').value='';$('c-pedida').value='';$('c-doc').value='pronta';$('c-seg').value='pronta';
   $('f-campanha').querySelectorAll('textarea,input[type=text],input[type=date]').forEach(function(e){e.value='';});
   $('c-solic').value=iso(new Date());$('c-docdias').value='2';$('c-segdias').value='3';
-  $('c-status').value='planejamento';$('c-frente').selectedIndex=0;$('c-real-w').hidden=true;$('c-resp').selectedIndex=0;$('c-aprov').selectedIndex=0;
+  $('c-status').value='planejamento';$('c-frente').selectedIndex=0;$('c-real-w').hidden=true;$('c-prevpub-w').hidden=true;$('c-atraso-w').hidden=true;$('c-atraso-obs-w').hidden=true;$('c-atraso-motivo').selectedIndex=0;$('c-resp').selectedIndex=0;$('c-aprov').selectedIndex=0;
   clearTimeout(saveTimer);currentId=null;currentRev=0;savedSig='';conflict=null;setHash('');
   if(storeMode==='server')setStatus(protectedApp?'Salvamento compartilhado ativo.':'Salvamento compartilhado ativo, mas sem senha: qualquer pessoa com o link pode ver e editar.',protectedApp?'ok':'warn');
   renderSaved();
@@ -1711,6 +1776,7 @@ function resetAll(){
 }
 
 document.addEventListener('click',function(e){
+  if(e.target.id==='modal-ov')hideModal();
   var b=e.target.closest('button');if(!b)return;
   if(b.dataset.step){
     var o=$(b.dataset.step),mn=b.dataset.min?+b.dataset.min:0;
@@ -1744,6 +1810,7 @@ document.addEventListener('click',function(e){
   if(b.dataset.ua){userAction(b.dataset.ua,b.dataset.u);return;}
   if(b.dataset.copysec){copyText(b.dataset.copysec,b);return;}
   if(b.dataset.act==='pub'){marcarPublicada(b.dataset.id);return;}
+  if(b.dataset.mact){modalClick(b.dataset.mact,b.dataset.id);return;}
   if(b.dataset.act==='theirs'&&conflict){var c=conflict;upsert(c);unsnap(c.k,c.estado);currentId=c.id;currentRev=c.rev;conflict=null;setMode(c.k);savedSig=JSON.stringify(snap(mode));setStatus('Mostrando a versão mais recente, de '+(c.autor||'outra pessoa')+'.','ok');renderSaved();return;}
   if(b.dataset.act==='mine'){doSave(true,true);return;}
   if(b.dataset.act==='del'){
