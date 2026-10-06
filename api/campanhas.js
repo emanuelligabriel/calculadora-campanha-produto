@@ -15,6 +15,7 @@ const MAX_ITEMS = 500;
 const MAX_BYTES = 200 * 1024;
 const MODOS = ['campanha', 'projeto', 'urgencia'];
 const STATUS = ['', 'planejamento', 'producao', 'publicada', 'cancelada'];
+const MOTIVOS_ATRASO = ['', 'produto', 'desenvolvimento', 'marketing', 'outro'];
 const MAX_LOG = 40;
 const JANELA_LOG_MS = 10 * 60 * 1000;
 
@@ -49,9 +50,12 @@ function limpar(b) {
     status: STATUS.indexOf(b.status) >= 0 ? b.status : '',
     comunicacao: data(b.comunicacao),
     publicacaoReal: data(b.publicacaoReal),
+    prevPub: data(b.prevPub),
     prevLo: num(b.prevLo, 999),
     prevHi: num(b.prevHi, 999),
     diasReais: num(b.diasReais, 999),
+    atrasoMotivo: MOTIVOS_ATRASO.indexOf(b.atrasoMotivo) >= 0 ? b.atrasoMotivo : '',
+    atrasoObs: txt(b.atrasoObs, 200),
     arquivada: b.arquivada === true,
     itens: itens,
     estado: estado
